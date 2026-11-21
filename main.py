@@ -33,6 +33,14 @@ from interfaces import (AccexError, Action, ActionExecutor, ActionResult, Brain,
 
 PACKAGES = ("voice", "brain", "actions", "demo")
 GENERIC_ERROR = "Something went wrong. Please try again."
+KEY_NAMES = {"ctrl_r": "right control", "ctrl_l": "left control", "alt_gr": "Alt Gr",
+             "alt_r": "right Alt", "alt_l": "left Alt", "shift_r": "right shift",
+             "menu": "the menu key", "pause": "pause", "scroll_lock": "scroll lock"}
+
+
+def hotkey_name() -> str:
+    key = os.getenv("ACCEX_HOTKEY", "ctrl_r").strip().lower()
+    return KEY_NAMES.get(key, key.upper() if key.startswith("f") else key)
 
 
 def _ms(since: float) -> int:
@@ -53,7 +61,7 @@ class Assistant:
 
     # ------------------------------------------------------------ loop
     def run(self) -> None:
-        self._say("Accex is ready. Hold right control and ask me anything.")
+        self._say(f"Accex is ready. Hold {hotkey_name()} and ask me anything.")
         while True:
             try:
                 self.run_turn()
