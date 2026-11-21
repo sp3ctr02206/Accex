@@ -42,7 +42,7 @@ class AnthropicVision:
     def __init__(self, model: str | None = None, effort: str | None = None) -> None:
         import anthropic
         self._anthropic = anthropic
-        self.model = model or os.getenv("ACCEX_LLM_MODEL", "claude-opus-5-5")
+        self.model = model or os.getenv("ACCEX_LLM_MODEL", "claude-haiku-5-5")
         self.effort = effort or os.getenv("ACCEX_LLM_EFFORT", "low")
         self.client = anthropic.Anthropic(timeout=_timeout(), max_retries=1)
         self.use_fallbacks = (self.model in _FALLBACK_MODELS
