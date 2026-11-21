@@ -17,5 +17,5 @@ def create_stt():
 
 
 def create_speaker():
-    from .tts import SapiSpeaker
-    return SapiSpeaker()
+    from .tts import create_speaker as _create
+    return _create()      # ACCEX_TTS: sapi (default) | openai
