@@ -55,7 +55,7 @@ Run through this on the **demo laptop** before every rehearsal and before going 
 
 - [ ] `demo/screens/dashboard.html` open in the browser, **full screen (F11)**.
 - [ ] Expected answers (the numbers on the dashboard):
-  - What's on my screen → sales dashboard for 2026, monthly bar chart, total **$1.2 million**.
+  - What's on my screen → sales dashboard for 2026, monthly bar chart, total **$1.24 million**.
   - Highest month → **March, $142,000**.
   - Lowest month → **August, $61,000**.
 - [ ] Switching dashboard → Gmail rehearsed (Alt+Tab or a second tab, one keystroke).

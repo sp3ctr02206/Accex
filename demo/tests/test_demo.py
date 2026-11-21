@@ -26,15 +26,23 @@ def test_dashboard_numbers():
     data = bars()
     assert max(data, key=data.get) == "Mar" and data["Mar"] == 142_000
     assert min(data, key=data.get) == "Aug" and data["Aug"] == 61_000
-    assert sum(data.values()) == 1_200_000
+    assert sum(data.values()) == 1_238_000
     assert sorted(data.values())[-2] < 142_000 and sorted(data.values())[1] > 61_000
+
+
+def test_dashboard_matches_brain_fixture():
+    """Same values as P2's prompt-eval screenshots, so the eval reflects the stage demo."""
+    import pytest
+    pytest.importorskip("PIL")  # make_dashboard.py imports Pillow at module level
+    from brain.fixtures.make_dashboard import MONTHS, SALES
+    assert bars() == {m: v * 1000 for m, v in zip(MONTHS, SALES)}
 
 
 def test_dashboard_matches_mock_brain_answers():
     brain = ScriptedBrain([])
     assert "March" in brain.ask("highest?", None).say and "142" in brain.ask("highest?", None).say
     assert "August" in brain.ask("lowest?", None).say and "61" in brain.ask("lowest?", None).say
-    assert "1.2 million" in brain.ask("screen?", None).say
+    assert "1.24 million" in brain.ask("screen?", None).say
 
 
 def test_dashboard_is_offline():
