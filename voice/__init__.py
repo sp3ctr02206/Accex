@@ -17,5 +17,9 @@ def create_stt():
 
 
 def create_speaker():
+    import os
+    if os.getenv("ACCEX_TTS", "sapi").strip().lower() == "elevenlabs":
+        from .elevenlabs import ElevenLabsSpeaker
+        return ElevenLabsSpeaker()
     from .tts import create_speaker as _create
-    return _create()      # ACCEX_TTS: sapi (default) | openai
+    return _create()      # ACCEX_TTS: sapi (default) | openai | elevenlabs
