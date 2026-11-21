@@ -5,19 +5,26 @@ import re
 
 from interfaces import Action, ActionResult, ActionSpec, Confirmation, Screenshot
 
-# Mirrors the actions planned in actions/builtin.py so the brain sees a realistic catalog.
+# Mirrors actions/builtin.py exactly (actions/tests/test_mock_parity.py checks it),
+# so the brain sees the same catalog with mocked and real actions.
 DEMO_SPECS = [
-    ActionSpec("open_url", "Open a web page in the default browser.", {"url": "full https URL"}),
-    ActionSpec("open_app", "Open an application by name.", {"name": "e.g. 'notepad', 'chrome'"}),
-    ActionSpec("scroll", "Scroll the active window.",
+    ActionSpec("open_url", "Open a web page in the default browser.",
+               {"url": "full https URL, e.g. https://www.youtube.com"}),
+    ActionSpec("open_app", "Open an application by name.",
+               {"name": "app name, e.g. 'notepad', 'chrome', 'calculator', 'file explorer'"}),
+    ActionSpec("scroll", "Scroll the active window up or down.",
                {"direction": "'up' or 'down'", "amount": "int, wheel clicks (default 5)"}),
-    ActionSpec("press_key", "Press a key or shortcut.", {"keys": "e.g. 'enter', 'ctrl+enter'"}),
-    ActionSpec("type_text", "Type text into the focused field.", {"text": "text to type"}),
+    ActionSpec("press_key", "Press a key or a keyboard shortcut.",
+               {"keys": "key or shortcut joined with '+', e.g. 'enter', 'tab', 'ctrl+enter', "
+                        "'alt+left'"}),
+    ActionSpec("type_text", "Type text into the focused field.", {"text": "the text to type"}),
     ActionSpec("click", "Click a point on the screen.",
-               {"x": "int, image pixels", "y": "int, image pixels",
-                "target": "short name of what is clicked"}),
-    ActionSpec("email_reply", "Reply to the open Gmail email and send it.",
-               {"body": "reply text"}, dangerous=True),
+               {"x": "int, image pixels from the left", "y": "int, image pixels from the top",
+                "target": "short name of what is clicked, e.g. 'Compose button'"}),
+    ActionSpec("email_reply",
+               "Reply to the email that is open in Gmail and send it. "
+               "Use only when an email is open.",
+               {"body": "the reply text"}, dangerous=True),
 ]
 
 
