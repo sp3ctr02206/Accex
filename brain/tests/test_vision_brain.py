@@ -86,18 +86,23 @@ def test_reset():
 def test_full_loop_with_vision_brain_confirms_email():
     reply = {"type": "email_reply", "params": {"body": "Thanks, I'll review it tomorrow."}}
     p = FakeProvider([say("I'll reply: thanks. Do you want me to send it?", reply, True),
-                      say("Done, anything else?")])
+                      say("Your reply was sent."),
+                      say("Nothing else is pending.")])
     executor = LoggingExecutor(quiet=True)
     speaker = PrintSpeaker(quiet=True)
     a = Assistant(listener=ScriptedListener(["Reply that I'll review it tomorrow.", "yes",
                                              "anything else?"]),
                   stt=ConsoleSTT(), speaker=speaker, capturer=StaticCapturer(),
                   brain=VisionBrain(executor.specs(), provider=p), executor=executor,
-                  gate=KeywordGate(), log=PrintLog(quiet=True))
+                  gate=KeywordGate(), log=PrintLog(quiet=True), settle_scale=0)
     a.run_turn()
     assert executor.executed == []
-    a.run_turn()
+    a.run_turn()                       # "yes": send, then look again and confirm
     assert [x.type for x in executor.executed] == ["email_reply"]
-    a.run_turn()
     assert "Email sent." in p.calls[1]["user_text"]
-    assert speaker.said[-1] == "Done, anything else?"
+    assert "Continue the user's request" in p.calls[1]["user_text"]
+    assert speaker.said[-1] == "Your reply was sent."
+    a.run_turn()
+    assert ("user", "[Screen after your last action.]") in [
+        (r, t.splitlines()[-1]) for r, t in p.calls[2]["history"]]
+    assert speaker.said[-1] == "Nothing else is pending."

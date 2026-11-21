@@ -22,6 +22,22 @@ def test_system_prompt_has_schema_and_safety_rules():
     assert "- open_url(url: https URL): Open a page." in p
 
 
+def test_continue_marker():
+    import main
+    from brain.prompt import CONTINUE_HISTORY, CONTINUE_MARKER, CONTINUE_TEXT
+    assert main.CONTINUE == CONTINUE_MARKER
+    shot = Screenshot(b"", 1280, 800, 0, 0, 2560, 1600)
+    t = build_user_text("[continue]", shot, ["Result of your last action open_url: done."])
+    assert t.endswith(CONTINUE_TEXT) and "User:" not in t
+    assert build_user_text("[continue]", shot, [], for_history=True) == CONTINUE_HISTORY
+
+
+def test_system_prompt_has_multistep_rules():
+    p = build_system_prompt(DEMO_SPECS)
+    assert "multi-step tasks" in p and "Do not ask for permission" in p
+    assert "Never describe a result you have not seen yet" in p
+
+
 def test_user_text():
     shot = Screenshot(b"", 1280, 800, 0, 0, 2560, 1600)
     t = build_user_text("What's on my screen?", shot, ["Result: done."])

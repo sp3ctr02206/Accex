@@ -27,7 +27,7 @@ class VisionBrain:
                  history_turns: int | None = None) -> None:
         self.system = build_system_prompt(specs)
         self.provider = provider or create_provider()
-        self.max_turns = history_turns or int(os.getenv("ACCEX_HISTORY_TURNS", "6"))
+        self.max_turns = history_turns or int(os.getenv("ACCEX_HISTORY_TURNS", "12"))
         self.turns: list[tuple[str, str]] = []   # (question text sent, assistant JSON)
         self.notes: list[str] = []
 

@@ -141,6 +141,17 @@ class PushToTalkListener:
         if self._matches(key):
             self.key_up()
 
+    def interrupted(self) -> bool:
+        """True while the key is held or a key-down is waiting to be consumed.
+
+        Only peeks; wait_for_utterance() still receives the events. main.py polls this
+        to stop a multi-step task as soon as the user presses the key."""
+        with self._lock:
+            if self._down:
+                return True
+        with self.events.mutex:
+            return any(e[0] == "down" for e in self.events.queue)
+
     def key_down(self, t: float | None = None) -> None:
         """Start recording. Auto-repeat presses while held are ignored."""
         t = time.perf_counter() if t is None else t

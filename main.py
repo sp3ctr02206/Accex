@@ -5,8 +5,11 @@
     python main.py --mock brain,actions    # real voice, scripted brain, logged actions
     python main.py --demo --dry-run        # verbose event log; actions only logged
 
-Loop: push-to-talk -> STT -> (screenshot taken in parallel) -> brain -> speak -> act,
-with a spoken yes/no confirmation before any dangerous action.
+Loop: push-to-talk -> STT -> (screenshot taken in parallel) -> brain -> speak -> act.
+Multi-step tasks: after each action Accex waits for the screen to settle, takes a new
+screenshot and asks the brain to continue (question CONTINUE), until the brain returns no
+action. Dangerous actions pause for a spoken yes/no; pressing the push-to-talk key stops
+a running task at once.
 """
 from __future__ import annotations
 
@@ -22,20 +25,31 @@ if sys.platform == "win32":
 
 import argparse
 import importlib
+import json
 import os
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
+from dataclasses import dataclass, field
 
 from interfaces import (AccexError, Action, ActionExecutor, ActionResult, Brain,
-                        ConfirmationGate, EventLog, Listener, ScreenCapturer, Screenshot,
-                        Speaker, SpeechToText)
+                        ConfirmationGate, EventLog, LLMResponse, Listener, ScreenCapturer,
+                        Screenshot, Speaker, SpeechToText)
 
 PACKAGES = ("voice", "brain", "actions", "demo")
 GENERIC_ERROR = "Something went wrong. Please try again."
 KEY_NAMES = {"ctrl_r": "right control", "ctrl_l": "left control", "alt_gr": "Alt Gr",
              "alt_r": "right Alt", "alt_l": "left Alt", "shift_r": "right shift",
              "menu": "the menu key", "pause": "pause", "scroll_lock": "scroll lock"}
+
+CONTINUE = "[continue]"          # question sent to the brain between steps of a task
+# Seconds to let the screen settle after an action before looking again.
+SETTLE_S = {"open_app": 3.0, "open_url": 2.5, "press_key": 1.0, "click": 0.8,
+            "scroll": 0.5, "type_text": 0.4, "wait": 0.0}
+DEFAULT_SETTLE_S = 0.8
+MAX_FAILURES = 2                 # consecutive failed actions before giving up
+MAX_REPEATS = 4                  # identical actions in a row before calling it stuck
+SPEECH_WAIT_S = 8.0              # longest wait for narration to finish before the next line
 
 
 def hotkey_name() -> str:
@@ -47,16 +61,34 @@ def _ms(since: float) -> int:
     return round((time.perf_counter() - since) * 1000)
 
 
+@dataclass
+class Task:
+    """Progress of one spoken request across its steps."""
+    steps: int = 0
+    failures: int = 0
+    last: tuple | None = None
+    repeats: int = 0
+    t0: float = field(default_factory=time.perf_counter)
+
+
+class Interrupted(Exception):
+    """The user pressed the push-to-talk key while a task was running."""
+
+
 class Assistant:
     def __init__(self, listener: Listener, stt: SpeechToText, speaker: Speaker,
                  capturer: ScreenCapturer, brain: Brain, executor: ActionExecutor,
-                 gate: ConfirmationGate, log: EventLog, slow_notice_s: float = 1.5) -> None:
+                 gate: ConfirmationGate, log: EventLog, slow_notice_s: float = 1.5,
+                 max_steps: int | None = None, settle_scale: float | None = None) -> None:
         self.listener, self.stt, self.speaker = listener, stt, speaker
         self.capturer, self.brain = capturer, brain
         self.executor, self.gate, self.log = executor, gate, log
         self.slow_notice_s = slow_notice_s
-        self.pending: tuple[Action, Screenshot | None] | None = None
-        self._pool = ThreadPoolExecutor(max_workers=1)
+        self.max_steps = max_steps or int(os.getenv("ACCEX_MAX_STEPS", "10"))
+        self.settle_scale = (settle_scale if settle_scale is not None
+                             else float(os.getenv("ACCEX_SETTLE_SCALE", "1")))
+        self.pending: tuple[Action, Screenshot | None, Task] | None = None
+        self._pool = ThreadPoolExecutor(max_workers=2)
         self._shot: Future | None = None
 
     # ------------------------------------------------------------ loop
@@ -72,7 +104,8 @@ class Assistant:
         self._pool.shutdown(wait=False, cancel_futures=True)
 
     def run_turn(self) -> None:
-        """One push-to-talk cycle. Never raises except to stop the loop."""
+        """One push-to-talk cycle, including any task it starts. Never raises except to
+        stop the loop."""
         self._shot = None
         try:
             clip = self.listener.wait_for_utterance(self._on_start)
@@ -89,6 +122,8 @@ class Assistant:
                 self._handle_question(text, t0, stt_ms)
         except (KeyboardInterrupt, EOFError):
             raise
+        except Interrupted:
+            self.speaker.stop()
         except AccexError as e:
             self._fail("turn", str(e), e.spoken)
         except Exception as e:
@@ -114,38 +149,131 @@ class Assistant:
             self._say("One moment.")
             resp = future.result()
         llm_ms = _ms(t_llm)
-        self.log.log("llm", raw=resp.raw, say=resp.say, ms=llm_ms,
-                     action=resp.action and {"type": resp.action.type, "params": resp.action.params},
-                     needs_confirmation=resp.needs_confirmation)
-
-        action = resp.action
-        if action and self.gate.requires_confirmation(action, resp.needs_confirmation):
-            say = resp.say.strip()
-            if not say.endswith("?"):
-                say = f"{say} Should I go ahead?".strip()
-            self.pending = (action, shot)
-            self._say(say)
-        else:
-            if resp.say.strip():
-                self._say(resp.say)
-            if action:
-                self._execute(action, shot, speak_success=False)
+        self._log_llm(resp, llm_ms, step=0)
         self.log.log("latency", stt_ms=stt_ms, capture_ms=capture_ms, llm_ms=llm_ms,
                      total_ms=_ms(t0))
+        self._run_task(resp, shot, Task(), first=True)
 
     def _handle_confirmation(self, text: str) -> None:
-        action, shot = self.pending  # type: ignore[misc]
+        action, shot, task = self.pending  # type: ignore[misc]
         verdict = self.gate.classify(text)
         self.log.log("confirm", reply=text, verdict=verdict, action=action.type)
         if verdict == "yes":
             self.pending = None
-            self._execute(action, shot, speak_success=True)
+            nxt = self._act_and_look(action, shot, task)
+            if nxt:
+                self._run_task(*nxt, task, first=False)
         elif verdict == "no":
             self.pending = None
             self.brain.record_action(action, ActionResult(False, "Cancelled by the user."))
             self._say("Okay, cancelled.")
+            self._end(task, "cancelled")
         else:
             self._say("Please say yes or no.")
+
+    # ------------------------------------------------------------ multi-step task
+    def _run_task(self, resp: LLMResponse, shot: Screenshot | None, task: Task,
+                  first: bool) -> None:
+        """Speak the reply and keep acting until the task is done or must stop."""
+        while True:
+            say, action = resp.say.strip(), resp.action
+            if not first:
+                self._wait_speech()
+            first = False
+
+            if action is None:
+                if say:
+                    self._say(say)
+                return self._end(task, "done")
+            if self.gate.requires_confirmation(action, resp.needs_confirmation):
+                if not say.endswith("?"):
+                    say = f"{say} Should I go ahead?".strip()
+                self.pending = (action, shot, task)
+                self._say(say)
+                return self._end(task, "confirm")
+            if task.steps >= self.max_steps:
+                self._say(f"I've done {task.steps} steps and stopped. "
+                          "Say continue to keep going.")
+                return self._end(task, "max_steps")
+            sig = (action.type, json.dumps(action.params, sort_keys=True, default=str))
+            task.repeats = task.repeats + 1 if sig == task.last else 1
+            task.last = sig
+            if task.repeats >= MAX_REPEATS:
+                self._say("I seem to be stuck repeating the same step, so I stopped.")
+                return self._end(task, "stuck")
+
+            if say:
+                self._say(say)
+            nxt = self._act_and_look(action, shot, task)
+            if nxt is None:
+                return
+            resp, shot = nxt
+
+    def _act_and_look(self, action: Action, shot: Screenshot | None,
+                      task: Task) -> tuple[LLMResponse, Screenshot | None] | None:
+        """Run one action, let the screen settle, look again and ask for the next step.
+        Returns None if the task ended here."""
+        result = self._execute(action, shot)
+        task.steps += 1
+        task.failures = 0 if result.ok else task.failures + 1
+        if task.failures >= MAX_FAILURES:
+            self._wait_speech()
+            self._say("I couldn't finish this task.")
+            self._end(task, "failed")
+            return None
+        self._settle(action.type)
+
+        self._shot = None
+        shot = self._screenshot()
+        self._check_interrupt()
+        t = time.perf_counter()
+        future = self._pool.submit(self.brain.ask, CONTINUE, shot)
+        while True:
+            try:
+                resp = future.result(timeout=0.05)
+                break
+            except FutureTimeout:
+                self._check_interrupt()
+        self._log_llm(resp, _ms(t), step=task.steps)
+        return resp, shot
+
+    def _end(self, task: Task, reason: str) -> None:
+        self.log.log("task_end", reason=reason, steps=task.steps, ms=_ms(task.t0))
+
+    # ------------------------------------------------------------ interruption
+    def _interrupted(self) -> bool:
+        check = getattr(self.listener, "interrupted", None)   # optional listener method
+        try:
+            return bool(check and check())
+        except Exception:
+            return False
+
+    def _check_interrupt(self) -> None:
+        if self._interrupted():
+            self.speaker.stop()
+            self.log.log("task_end", reason="interrupted")
+            raise Interrupted()
+
+    def _settle(self, action_type: str) -> None:
+        delay = SETTLE_S.get(action_type, DEFAULT_SETTLE_S) * self.settle_scale
+        deadline = time.monotonic() + delay
+        while True:
+            self._check_interrupt()
+            left = deadline - time.monotonic()
+            if left <= 0:
+                return
+            time.sleep(min(0.05, left))
+
+    def _wait_speech(self) -> None:
+        """Let the previous line finish (say() would cut it off), but stop at once if the
+        user presses the key."""
+        deadline = time.monotonic() + SPEECH_WAIT_S
+        while time.monotonic() < deadline:
+            self._check_interrupt()
+            t = time.monotonic()
+            self.speaker.wait(0.1)
+            if time.monotonic() - t < 0.09:      # returned early: nothing is playing
+                return
 
     # ------------------------------------------------------------ helpers
     def _screenshot(self) -> Screenshot | None:
@@ -157,7 +285,7 @@ class Assistant:
             self.log.log("error", where="capture", detail=repr(e))
             return None
 
-    def _execute(self, action: Action, shot: Screenshot | None, speak_success: bool) -> None:
+    def _execute(self, action: Action, shot: Screenshot | None) -> ActionResult:
         self.log.log("action", type=action.type, params=action.params)
         t = time.perf_counter()
         result = self.executor.execute(action, shot)
@@ -165,11 +293,17 @@ class Assistant:
         self.brain.record_action(action, result)
         if result.ok:
             self.speaker.cue("done")
-            if speak_success:
-                self._say(result.message)
         else:
             self.speaker.cue("error")
+            self._wait_speech()
             self._say(result.message)
+        return result
+
+    def _log_llm(self, resp: LLMResponse, ms: int, step: int) -> None:
+        self.log.log("llm", raw=resp.raw, say=resp.say, ms=ms, step=step,
+                     action=resp.action and {"type": resp.action.type,
+                                             "params": resp.action.params},
+                     needs_confirmation=resp.needs_confirmation)
 
     def _say(self, text: str) -> None:
         self.log.log("say", text=text)

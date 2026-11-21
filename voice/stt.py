@@ -15,6 +15,8 @@ import numpy as np
 from interfaces import AccexError, AudioClip
 
 FALLBACK_MODEL = "whisper-1"
+# Steers spelling of names the user says to the assistant (otherwise "Access", "Actus").
+VOCABULARY_HINT = "Accex, open Gmail, YouTube, Spotify, Discord, scroll down."
 SERVICE_ERROR = "I couldn't understand the audio service. Please try again."
 
 
@@ -64,7 +66,7 @@ class OpenAISTT:
     def _call(self, model: str, clip: AudioClip) -> str:
         resp = self.client.audio.transcriptions.create(
             model=model, file=("speech.wav", clip.wav_bytes, "audio/wav"),
-            language="en", timeout=self.timeout)
+            language="en", prompt=VOCABULARY_HINT, timeout=self.timeout)
         text = resp if isinstance(resp, str) else getattr(resp, "text", "")
         return (text or "").strip()
 

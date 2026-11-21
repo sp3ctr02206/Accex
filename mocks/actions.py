@@ -25,6 +25,8 @@ DEMO_SPECS = [
                "Reply to the email that is open in Gmail and send it. "
                "Use only when an email is open.",
                {"body": "the reply text"}, dangerous=True),
+    ActionSpec("wait", "Wait for a page or app that is still loading, then look again.",
+               {"seconds": "float, how long to wait, 0.5 to 5 (default 2)"}),
 ]
 
 

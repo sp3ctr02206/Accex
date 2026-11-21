@@ -284,3 +284,11 @@ def email_reply(body: str) -> str:
     gui.hotkey("ctrl", "enter")       # Gmail: send
     _sleep(GMAIL_SEND_WAIT_S)
     return "Email sent."
+
+
+# ------------------------------------------------------------ wait
+@action("wait", "Wait for a page or app that is still loading, then look again.",
+        {"seconds": "float, how long to wait, 0.5 to 5 (default 2)"})
+def wait(seconds: float = 2.0) -> str:
+    _sleep(max(0.5, min(seconds, 5.0)))
+    return "Waited."

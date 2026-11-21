@@ -65,7 +65,7 @@ def run(ex, type_, **params):
 def test_catalog():
     names = {s.name: s for s in RegistryExecutor().specs()}
     assert set(names) == {"open_url", "open_app", "scroll", "press_key", "type_text",
-                          "click", "email_reply"}
+                          "click", "email_reply", "wait"}
     assert [n for n, s in names.items() if s.dangerous] == ["email_reply"]
 
 
@@ -197,3 +197,14 @@ def test_dry_run_touches_nothing(env, monkeypatch):
                           ("email_reply", {"body": "hi"}), ("type_text", {"text": "hi"})]:
         assert ex.execute(Action(type_, params), SHOT).ok
     assert gui.calls == [] and clip.history == [] and opened == []
+
+
+def test_wait_is_clamped(monkeypatch):
+    slept = []
+    monkeypatch.setattr(builtin, "_sleep", slept.append)
+    monkeypatch.delenv("ACCEX_DRY_RUN", raising=False)
+    ex = RegistryExecutor()
+    for seconds in (2, 30, 0):
+        assert ex.execute(Action("wait", {"seconds": seconds}), None).ok
+    assert ex.execute(Action("wait", {}), None).ok
+    assert slept == [2.0, 5.0, 0.5, 2.0]

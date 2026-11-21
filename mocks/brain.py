@@ -21,14 +21,39 @@ class ScriptedBrain:
     def __init__(self, specs: list[ActionSpec]) -> None:
         self.specs = specs
         self.history: list[tuple[str, str]] = []
+        self.plan: list[LLMResponse] = []      # remaining steps of a multi-step task
+        self.final = ""                        # what to say when the plan is done
+        self.last_result: ActionResult | None = None
 
     def ask(self, question: str, screenshot: Screenshot | None) -> LLMResponse:
-        resp = self._answer(question.lower())
+        q = question.strip().lower()
+        resp = self._continue() if q == "[continue]" else self._answer(q)
         self.history.append(("user", question))
         self.history.append(("assistant", resp.say))
         return resp
 
+    def _continue(self) -> LLMResponse:
+        """Next step of the current task, or a confirmation of the last action's result."""
+        if self.plan:
+            return self.plan.pop(0)
+        final, self.final = self.final, ""
+        if final:
+            return LLMResponse(say=final)
+        return LLMResponse(say=self.last_result.message if self.last_result else "Done.")
+
     def _answer(self, q: str) -> LLMResponse:
+        self.plan, self.final = [], ""
+        if "spotify" in q and "play" in q:
+            self.plan = [
+                LLMResponse(say="Clicking search.",
+                            action=Action("click", {"x": 600, "y": 30, "target": "Search"})),
+                LLMResponse(say="Typing the song.",
+                            action=Action("type_text", {"text": "Money for Nothing"})),
+                LLMResponse(say="Searching.", action=Action("press_key", {"keys": "enter"})),
+            ]
+            self.final = "Money for Nothing by Dire Straits is playing."
+            return LLMResponse(say="Opening Spotify.",
+                               action=Action("open_app", {"name": "spotify"}))
         if "reply" in q:
             return LLMResponse(
                 say=f"I'll reply: '{REPLY_BODY}' Do you want me to send it?",
@@ -54,10 +79,12 @@ class ScriptedBrain:
         return LLMResponse(say="I'm the mock brain. I only know the demo questions.")
 
     def record_action(self, action: Action, result: ActionResult) -> None:
+        self.last_result = result
         self.history.append(("assistant", f"[action {action.type}: {result.message}]"))
 
     def reset(self) -> None:
         self.history.clear()
+        self.plan, self.final, self.last_result = [], "", None
 
 
 def create_capturer() -> StaticCapturer:
