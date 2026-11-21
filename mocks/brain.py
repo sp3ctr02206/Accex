@@ -43,7 +43,7 @@ class ScriptedBrain:
             return LLMResponse(say="August had the lowest sales, about 61 thousand dollars.")
         if "screen" in q:
             return LLMResponse(say="This is a sales dashboard for 2026 with a bar chart of "
-                                   "monthly sales. Total sales are about 1.2 million dollars.")
+                                   "monthly sales. Total sales are 1.24 million dollars.")
         if "open" in q and "youtube" in q:
             return LLMResponse(say="Opening YouTube.",
                                action=Action("open_url", {"url": "https://www.youtube.com"}))
