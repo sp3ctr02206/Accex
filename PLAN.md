@@ -54,7 +54,7 @@ Hand this file to your Claude Code session along with `interfaces.py`, and tell 
 | Microphone | **sounddevice** 16 kHz mono int16, WAV in memory | Windows mic privacy toggle must be on. `ACCEX_MIC_DEVICE` picks the device. Use a headset mic. |
 | STT | OpenAI `gpt-4o-mini-transcribe` (fallback `whisper-1`), `language="en"` | — |
 | Capture | **mss** + **Pillow**, longest side ≤1280, JPEG q≈80 | `main.py` sets DPI awareness first, so capture and click coordinates are both physical pixels. |
-| Vision LLM | `anthropic` SDK, `claude-opus-5-5`, effort `low` (`.env`) | Send only the newest screenshot; history is text only. The model is swappable in `.env` if latency is too high. |
+| Vision LLM | `anthropic` SDK, `claude-haiku-5-5`, effort `low` (`.env`) | Send only the newest screenshot; history is text only. Haiku: p50 0.8 s vs Opus 1.9 s, same accuracy on the dashboard eval. Switch to `claude-opus-5-5` in `.env` if actions need more accuracy. |
 | TTS | **SAPI via pywin32** (async + purge = interruptible) | **No pyttsx3**: it blocks, hangs and can't be interrupted. Stretch: OpenAI TTS, or speaking through NVDA's controller client. |
 | Earcons | numpy sine tones + `sounddevice.play` | — |
 | Actions | `webbrowser`, `os.startfile`, **pyautogui**, **pyperclip** (paste text) | `pyautogui.write` is ASCII-only, so paste instead. Elevated windows can't receive input (UIPI). Keep `FAILSAFE=True`. |
