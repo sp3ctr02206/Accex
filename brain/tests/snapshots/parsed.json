@@ -1,0 +1,48 @@
+[
+ [
+  "Hi.",
+  null,
+  false,
+  "{\"say\": \"Hi.\", \"action\": null, \"needs_confirmation\": false}"
+ ],
+ [
+  "Opening.",
+  [
+   "open_url",
+   {
+    "url": "https://x.com"
+   }
+  ],
+  false,
+  "```json\n{\"say\": \"Opening.\", \"action\": {\"type\": \"open_url\", \"params\": {\"url\": \"https://x.com\"}}}\n```"
+ ],
+ [
+  "It says {draft}.",
+  null,
+  false,
+  "Sure! {\"say\": \"It says {draft}.\", \"action\": null} done"
+ ],
+ [
+  "Sending?",
+  [
+   "email_reply",
+   {
+    "body": "Hi"
+   }
+  ],
+  true,
+  "{\"say\": \"Sending?\", \"action\": {\"type\": \"email_reply\", \"body\": \"Hi\"}, \"needs_confirmation\": \"true\"}"
+ ],
+ [
+  "Plain text answer.",
+  null,
+  false,
+  "Plain text answer."
+ ],
+ [
+  "Sorry, I didn't get an answer. Please try again.",
+  null,
+  false,
+  ""
+ ]
+]

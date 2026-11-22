@@ -1,0 +1,8 @@
+[
+ "[Screenshot attached: 1280x800 pixels.]\nUser: What's on my screen?",
+ "[No screenshot available this turn.]\nUser: What's on my screen?",
+ "[Result of your last action open_url: done. Opening youtube.com.]\n[Screenshot attached: 1280x800 pixels.]\nUser: Open YouTube",
+ "[Result of your last action open_url: done. Opening youtube.com.]\nUser: Open YouTube",
+ "[Result of your last action open_url: done. Opening youtube.com.]\n[Screenshot attached: 1280x800 pixels.]\n[No new words from the user. This screenshot was taken after your last action. Continue the user's request with the next step, or if it is done, set action to null and briefly confirm the result you can see.]",
+ "[Result of your last action open_url: done. Opening youtube.com.]\n[Screen after your last action.]"
+]
