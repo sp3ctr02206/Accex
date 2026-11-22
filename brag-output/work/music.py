@@ -241,6 +241,9 @@ def whoosh(dur=0.5):
     return x * e / (np.abs(x).max() + 1e-9)
 
 
+# hook: a soft notification ding as each pop-up lands (0.0, 0.25, 0.5)
+for t, m in ((0.0, 81), (0.25, 77), (0.5, 74)):
+    put(bell(m, 0.7), t, 0.07, (-0.4, 0.3, 0.6)[[0.0, 0.25, 0.5].index(t)], send=0.35)
 # listening earcon at 3.8: two rising notes (A5 -> D6)
 put(bell(81, 0.5), 3.75, 0.10, send=0.3)
 put(bell(86, 0.6), 3.875, 0.10, send=0.3)

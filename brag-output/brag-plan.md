@@ -1,17 +1,21 @@
 # /brag plan: Accex
 
 ## Rubric
-- **What is it?** A voice assistant for blind and low-vision people. You hold a key and ask out loud; it looks at your screen, answers, and does the clicking for you.
-- **Who is it for?** People who can't see the screen (and, in senior mode, grandparents). They can use their computer without a mouse or eyesight.
-- **What sets it apart?** It *acts* step by step until the task is done instead of just reading things out. It asks for a spoken "yes" before sending, deleting or buying anything. Senior mode stops scams before anything is clicked.
-- **Most impressive claim:** "Play Bohemian Rhapsody on Spotify" becomes four real actions, narrated, ending with the song playing, with nobody touching the mouse.
-- **Visual hook:** a black screen (what the user sees), then the glass pill lighting up as it listens.
+- **What is it?** An AI digital navigator: a voice assistant for people who never learned to use a computer. You hold a key and ask out loud, in your own words. It looks at your screen, does the task step by step and tells you what it's doing.
+- **Who is it for?** People who are digitally illiterate: older adults, workers who never needed a computer, anyone locked out of online services because nobody taught them. They need no computer words and no mouse skills.
+- **What sets it apart?**
+  - It understands vague requests using a profile of the user's family.
+  - It acts until the task is done and narrates every step, so it's never a black box.
+  - It asks for a spoken "yes" before sending, deleting or buying anything, and that rule is enforced in code.
+  - It checks every screen for scams and stops them before anything is clicked.
+- **Most impressive claim:** "Play Bohemian Rhapsody on Spotify" becomes four real actions, narrated, ending with the song playing, with nobody touching the mouse. Then comes a fake "your grandson needs gift cards" email, and Accex refuses: "Stop. This looks like a scam."
+- **Visual hook:** a cluttered screen with icons, pop-ups and a cursor that doesn't know where to go (what the user feels). Then the glass pill lights up as it listens.
 - **Real UI shown:** the actual pill from `ui/web/`: its `style.css` is loaded as-is, the markup is copied from `index.html`, and the state names, step labels and colors come from `app.js`. The event script is the one in `ui/preview.py`.
-- **Tone:** `polished` with a warm edge. Clean Apple-style glass, calm confidence, no jokes forced.
-- **Share caption:** "Accex: hold a key, ask out loud, and your computer does the rest. A voice assistant for blind and low-vision users. Built at Cutie Hack 2026."
+- **Tone:** polished, with a warm edge. Clean Apple-style glass, calm confidence, no forced jokes.
+- **Share caption:** "Accex: ask out loud, in your own words, and your computer does the rest, and stops scams along the way. An AI digital navigator for everyone who was never taught how to use a computer. Built at Cutie Hack 2026."
 
 ## Visual identity (from ui/web/style.css)
-- **Glass:** `rgb(30,31,38)` with a white specular rim. Text is `rgba(255,255,255,.96)`, secondary text `rgba(235,235,245,.62)`.
+- **Glass:** `rgb(30,31,38)` with a white specular rim.
 - **State colors:**
   - listening: `#64d2ff #0a84ff #5e5ce6`
   - thinking: `#bf5af2 #5e5ce6 #ff375f`
@@ -25,16 +29,16 @@
 
 | # | Time | Scene | On screen | Sound |
 |---|---|---|---|---|
-| 1 Hook | 0.0–3.0 | Black screen | "Can't see your screen?" builds word by word and holds from 0.6 to 2.0. Then "Just ask." holds from 2.1 to 3.0. | Low pad, sub swell. Nothing else. |
-| 2 Reveal | 3.0–7.0 | The pill blooms in the centre at 2.2× | Kicker "ACCEX". The idle pill switches to **Listening** (wave bars). The quote “Play Bohemian Rhapsody on Spotify” types in from 3.6 to 4.8 and holds. At 5.5 the pill expands with a YOU line. At 6.0 it shows **Thinking**, "Looking at your screen…". | The beat drops at 3.0. Listening earcon at 3.5. |
-| 3 Acts | 7.0–13.0 | Windows-style desktop with a generic music app and the pill docked bottom-centre (1.5×) | Headline "It sees your screen. It does the clicks." Steps land on beats: 7.5 Opening Spotify (the app window springs in), 8.5 Clicking the search box (cursor glides and clicks), 9.5 Typing “Bohemian Rhapsody Queen”, 10.5 Pressing enter (the result appears and the play bar starts). At 11.0 the pill shows **Done**, the progress bar reaches 100% and the reply reads "Bohemian Rhapsody by Queen is now playing on Spotify." | Hats come in. Soft clicks and key ticks. A done chime in key at 11.0. |
-| 4 Scams | 13.0–17.0 | Mail window (generic, rebuilt from fixture `scam_grandson_giftcards.png`) with a Senior badge on the pill | YOU line: “Lucas needs help, what should I do?”. At 14.0 the pill turns red, **Scam blocked**: "Nothing was clicked or paid". The gift-card line on the email gets a red outline. Headline "Senior mode stops scams." | Drums thin out. A low minor stab at 14.0. |
-| 5 Outro | 17.0–20.0 | Dark, the big orb centred | "Accex" wordmark, then "Your computer, by voice." from 17.5, then "For blind & low-vision users · Built at Cutie Hack 2026" from 18.0. All hold to the end. | Resolving chord, chime, a long tail. |
+| 1 Hook | 0.0–3.0 | Cluttered desktop | Messy icons ("New folder (3)", "Setup (2).exe", "taxes_FINAL_v2"…). Three pop-ups pile up (updates, notifications, storage) while a lost cursor wanders. The screen dims, then "Lost on your computer?" builds and holds from 0.9 to 2.0. "Just ask." holds from 2.1 to 3.0. | Low pad. A soft notification ding in key for each pop-up. |
+| 2 Reveal | 3.0–7.0 | The pill blooms in the centre at 2.2× | Kicker "Hold a key · ask in your own words". The idle pill switches to **Listening**. The quote “Play Bohemian Rhapsody on Spotify” types in and holds. At 5.5 the pill expands with a YOU line and shows **Thinking**. | The beat drops at 3.0. Listening earcon. |
+| 3 Acts | 7.0–13.0 | Desktop with a generic music app and the pill docked bottom-centre (1.5×) | Headline "It does every click. And tells you each step." Steps land on beats: 7.5 Opening Spotify, 8.5 Clicking the search box, 9.0 Typing, 10.0 Pressing enter. At 10.5 the pill shows **Done**, the progress bar reaches 100% and the reply reads "Bohemian Rhapsody by Queen is now playing on Spotify." | Hats and arp. Clicks, key ticks, a done chime. |
+| 4 Scams | 13.0–17.0 | Generic mail window, fake-grandson email (from fixture `scam_grandson_giftcards.png`) | YOU line “Lucas needs help, what should I do?”. At 14.0 the pill shows **Scam blocked**: "Stop. This looks like a scam…". The gift-card line gets a red outline. Headline "And it stops scams before you click." | Drums thin out. A low D-minor stab at 14.0. |
+| 5 Outro | 17.0–20.0 | Big orb | "Accex", then "Ask in your own words.", then "An AI digital navigator · Built at Cutie Hack 2026". | Resolve to F, bells, a long tail. |
 
 Durations: 3 + 4 + 6 + 4 + 3 = **20 s** (600 frames).
 
 ## Notes
-- **Brands:** the music app and mail window are generic stand-ins. There are no Spotify or Gmail logos and no browser chrome; Spotify is only named as the user's spoken words.
+- **Brands:** the music app, mail window and desktop are generic stand-ins. There are no Spotify, Gmail or Windows logos; Spotify is only named as the user's spoken words.
 - **Names:** "Lucas" is the fictional grandson from the test fixtures. There is no real data, keys or email.
 - **Repo:** it is private, so the outro names the hackathon instead of a URL.
-- **Music:** synthesized in numpy. F major (Fmaj7 · Am7 · Dm7 · B♭maj7, one chord per bar), going darker (Dm · B♭) under the scam scene and resolving to F in the outro. Effects use the same key and grid.
+- **Music:** synthesized in numpy. F major (Dm9 · B♭maj7 · Fmaj7 · Am7 · Dm7 …), going darker under the scam scene and resolving to Fmaj9 in the outro. Effects use the same key and grid.

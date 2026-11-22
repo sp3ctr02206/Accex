@@ -16,9 +16,25 @@
 
   /* 1 hook */
   #s1 { background: #000; }
-  .hook { position: absolute; left: 0; right: 0; top: 440px; text-align: center; font-size: 118px;
+  .hook { position: absolute; left: 0; right: 0; top: 440px; text-shadow: 0 6px 40px rgba(0,0,0,.6); text-align: center; font-size: 118px;
           font-weight: 650; letter-spacing: -0.035em; line-height: 1; }
   .hook span { display: inline-block; margin: 0 0.12em; }
+
+  #clutter { position: absolute; inset: 0; background:
+      radial-gradient(60% 70% at 25% 20%, #2f6fd0, transparent 70%),
+      radial-gradient(60% 60% at 85% 90%, #1a8f86, transparent 70%), #173a73; }
+  .ico { position: absolute; width: 112px; text-align: center; font-size: 15px; color: #fff;
+         text-shadow: 0 1px 3px rgba(0,0,0,.8); line-height: 1.2; }
+  .ico b { display: block; width: 58px; height: 58px; margin: 0 auto 6px; border-radius: 10px;
+           box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+  .dlg { position: absolute; background: #f3f3f3; color: #1b1b1b; border-radius: 10px; padding: 24px 26px;
+         box-shadow: 0 30px 70px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.2); font-size: 20px; }
+  .dlg h4 { font-size: 23px; font-weight: 650; margin-bottom: 10px; }
+  .dlg .btns { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .dlg .btns span { padding: 9px 18px; border-radius: 6px; background: #e1e1e1; font-size: 17px; }
+  .dlg .btns span.pri { background: #0a64d8; color: #fff; }
+  #scrim { position: absolute; inset: 0; background: #000; }
+  #cursor0 { position: absolute; width: 40px; height: 54px; left: 0; top: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
 
   /* 2 reveal */
   #s2 { background: radial-gradient(60% 70% at 50% 62%, rgba(10,132,255,0.20), transparent 70%), #06070b; }
@@ -110,18 +126,30 @@
 </head>
 <body>
   <div id="s1" class="scene">
-    <div class="hook" id="hook1"><span>Can't</span><span>see</span><span>your</span><span>screen?</span></div>
+    <div id="clutter"></div>
+    <div class="dlg" id="dlg1" style="left:1010px;top:250px;width:560px">
+      <h4>Updates are ready</h4>Restart now to finish installing updates?
+      <div class="btns"><span class="pri">Restart now</span><span>Remind me later</span><span>Details</span></div></div>
+    <div class="dlg" id="dlg2" style="left:600px;top:660px;width:470px">
+      <h4>Allow notifications?</h4>This site wants to show notifications.
+      <div class="btns"><span class="pri">Allow</span><span>Block</span></div></div>
+    <div class="dlg" id="dlg3" style="left:1390px;top:860px;width:470px;padding:18px 22px">
+      <h4 style="font-size:19px;margin-bottom:4px">Storage almost full</h4><span style="font-size:17px">Free up space to keep your PC running.</span></div>
+    <svg id="cursor0" viewBox="0 0 24 32"><path d="M2 2 L2 26 L8.5 20 L12.5 30 L16.5 28.3 L12.6 18.6 L21 18.6 Z"
+         fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <div id="scrim"></div>
+    <div class="hook" id="hook1"><span>Lost</span><span>on</span><span>your</span><span>computer?</span></div>
     <div class="hook" id="hook2"><span>Just</span><span>ask.</span></div>
   </div>
 
   <div id="s2" class="scene">
-    <div id="kicker">Hold a key · speak</div>
+    <div id="kicker">Hold a key · ask in your own words</div>
     <div id="quote"></div>
   </div>
 
   <div id="desk" class="scene">
-    <div class="headline" id="head3">It sees your screen. It does the clicks.</div>
-    <div class="headline" id="head4">Senior mode stops scams.</div>
+    <div class="headline" id="head3">It does every click. And tells you each step.</div>
+    <div class="headline" id="head4">And it stops scams before you click.</div>
     <div id="app" class="win">
       <div class="side"><div><i></i>Home</div><div><i></i>Search</div><div><i></i>Library</div></div>
       <div id="search"><span class="mag"></span><span id="q">Search songs, artists…</span></div>
@@ -160,8 +188,8 @@
   <div id="s5" class="scene">
     <div class="bigorb" id="bigorb"><div class="orb"><span class="orb-core"></span><span class="orb-glow"></span></div></div>
     <div id="word">Accex</div>
-    <div id="tag">Your computer, by voice.</div>
-    <div id="fine">For blind &amp; low-vision users · Built at Cutie Hack 2026</div>
+    <div id="tag">Ask in your own words.</div>
+    <div id="fine">An AI digital navigator · Built at Cutie Hack 2026</div>
   </div>
 
   <!-- markup copied from ui/web/index.html -->
@@ -293,7 +321,16 @@ function render(t) {
   // 1 hook
   if (t < 3.0) {
     const words = $("hook1").children;
-    [0.08, 0.22, 0.36, 0.5].forEach((at, i) => enter(words[i], t, at, 0.3, 24));
+    [0.3, 0.44, 0.58, 0.72].forEach((at, i) => enter(words[i], t, at, 0.3, 24));
+    // the lost cursor wanders, the pop-ups pile up, then everything dims behind the words
+    const cx = 960 + 330 * Math.sin(2.1 * t + 0.4) + 140 * Math.sin(5.3 * t);
+    const cy = 560 + 220 * Math.cos(1.6 * t) + 90 * Math.sin(4.1 * t + 1);
+    $("cursor0").style.transform = `translate(${cx}px, ${cy}px)`;
+    [["dlg1", 0.0], ["dlg2", 0.25], ["dlg3", 0.5]].forEach(([id, at]) => {
+      const el = $(id), p = spring(prog(t, at, at + 0.45));
+      el.style.opacity = clamp(prog(t, at, at + 0.12)); el.style.transform = `scale(${lerp(0.85, 1, p)})`;
+    });
+    $("scrim").style.opacity = lerp(0, 0.62, easeOut(prog(t, 0.25, 0.7))) + 0.38 * easeInOut(prog(t, 1.9, 2.1));
     $("hook1").style.opacity = 1 - prog(t, 1.9, 2.05);
     const h2 = $("hook2").children;
     [2.1, 2.25].forEach((at, i) => enter(h2[i], t, at, 0.3, 24));
@@ -377,6 +414,18 @@ function render(t) {
   for (const a of document.getAnimations()) { a.pause(); a.currentTime = t * 1000; }
 }
 
+const ICONS = ["Setup (2).exe", "New folder (3)", "Document1.docx", "Untitled", "Shortcut to Downloads",
+  "Install_now", "Photos 2019", "taxes_FINAL_v2", "Recycle Bin", "Browser", "readme.txt", "New folder (4)",
+  "Scan0001.pdf", "Driver update", "Copy of Copy", "Toolbar setup", "Zoom (1)", "img_8812.jpg"];
+const COLORS = ["#e8b33a", "#f2c94c", "#3a7bd5", "#9aa5b1", "#5bc0eb", "#e4572e", "#76b041", "#c0c0c0", "#8d99ae"];
+ICONS.forEach((name, i) => {
+  const d = document.createElement("div"); d.className = "ico";
+  const col = i % 3, row = Math.floor(i / 3);
+  d.style.left = `${30 + col * 128 + (row % 2) * 6}px`; d.style.top = `${24 + row * 136}px`;
+  if (i >= 12) { d.style.left = `${1560 + (i % 3) * 120}px`; d.style.top = `${40 + (i - 12) % 3 * 140 + (i > 14 ? 420 : 0)}px`; }
+  const b = document.createElement("b"); b.style.background = COLORS[i % COLORS.length];
+  d.append(b, document.createTextNode(name)); $("clutter").append(d);
+});
 window.render = render;
 window.ready = document.fonts.ready.then(() => true);
 render(0);
