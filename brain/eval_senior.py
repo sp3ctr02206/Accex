@@ -125,9 +125,35 @@ NORMAL_QUESTIONS = {
 }
 
 
-def _brain(profile: str, log_path: str):
+def _family(prof: dict) -> list[dict]:
+    return [p for p in prof.get("family", []) if isinstance(p, dict)]
+
+
+# Learning: ask about something unknown, learn from the answer, then a NEW session must
+# use it without asking. Each scenario runs on a temporary copy of the family profile.
+LEARN = [
+    {"name": "unknown person", "screen": "desktop", "first": "Call Pablo",
+     "answer": "He's my nephew, I talk to him on WhatsApp",
+     "check": lambda prof: any(p.get("name", "").lower() == "pablo" for p in _family(prof)),
+     "later": Case("desktop", "I want to talk to my nephew",
+                   ["act:open_app:whatsapp", "act:open_url:whatsapp"])},
+    {"name": "vague request", "screen": "desktop", "first": "Do the bills thing",
+     "answer": "I mean paying the electricity bill on the Iberdrola website, iberdrola.es",
+     "check": lambda prof: any("iberdrola" in str(n.get("text", "")).lower()
+                               for n in prof.get("learned_notes", []) if isinstance(n, dict)),
+     "later": Case("desktop", "Do the bills thing", ["act:open_url:iberdrola"])},
+    {"name": "nickname", "screen": "desktop", "first": "Call my little star",
+     "answer": "My little star is Sofia, my granddaughter",
+     "check": lambda prof: any("little star" in " ".join(map(str, p.get("aliases", []))).lower()
+                               for p in _family(prof) if p.get("name") == "Sofia"),
+     "later": Case("desktop", "I want to see my little star",
+                   ["act:open_app:whatsapp", "act:open_url:whatsapp"])},
+]
+
+
+def _brain(profile: str, log_path: str, family_path: Path = PROFILE):
     os.environ["ACCEX_PROFILE"] = profile
-    os.environ["ACCEX_FAMILY_PROFILE"] = str(PROFILE)
+    os.environ["ACCEX_FAMILY_PROFILE"] = str(family_path)
     os.environ["ACCEX_FAMILY_LOG"] = log_path
     from brain.brain import VisionBrain
     from mocks.actions import DEMO_SPECS
@@ -162,9 +188,46 @@ def _show(ok: bool, label: str, r: LLMResponse, ms: float, verbose: bool) -> Non
         print(f"  [{'ok  ' if ok else 'FAIL'}] {ms:5.0f} ms | {label}\n         {r.say}{act}")
 
 
-def run(sections=("vague", "clear", "scam"), verbose: bool = False) -> dict:
+def _timed(brain, question: str, screen: str) -> tuple[LLMResponse, float]:
+    t = time.perf_counter()
+    try:
+        r = brain.ask(question, _shot(screen))
+    except AccexError as e:
+        r = LLMResponse(say=f"<error: {e}>")
+    return r, (time.perf_counter() - t) * 1000
+
+
+def run_learning(log_path: str, verbose: bool) -> tuple[int, int]:
+    import shutil
+    print("\n== learning (senior) ==")
+    ok_n = 0
+    for sc in LEARN:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "family.json"
+            shutil.copy(PROFILE, path)
+            brain = _brain("senior", log_path, path)
+            r1, ms1 = _timed(brain, sc["first"], sc["screen"])
+            asked = outcome(r1) == "clarify"
+            _show(asked, f"{sc['name']}: {sc['first']}  [{outcome(r1)}]", r1, ms1, verbose)
+            r2, ms2 = _timed(brain, sc["answer"], sc["screen"])
+            learned = sc["check"](json.loads(path.read_text("utf-8")))
+            _show(learned, f"{sc['name']}: {sc['answer']}  [learned={learned}]", r2, ms2, verbose)
+            later = sc["later"]
+            fresh = _brain("senior", log_path, path)          # a new session reads the file
+            r3, ms3 = _timed(fresh, later.question, later.screen)
+            used = accepted(later, r3) and outcome(r3) != "clarify"
+            _show(used, f"{sc['name']} (new session): {later.question}  [{outcome(r3)}]",
+                  r3, ms3, verbose)
+            ok_n += asked and learned and used
+    print(f"  {ok_n}/{len(LEARN)} scenarios: asked, learned, and used it next session")
+    return ok_n, len(LEARN)
+
+
+def run(sections=("vague", "clear", "scam", "learn"), verbose: bool = False) -> dict:
     log_path = str(Path(tempfile.gettempdir()) / "accex_eval_family.jsonl")
     res: dict = {}
+    if "learn" in sections:
+        res["learn"] = run_learning(log_path, verbose)
     if "vague" in sections:
         print("\n== vague requests (senior) ==")
         n = 0
@@ -225,6 +288,8 @@ def passed(res: dict) -> bool:
         ok &= res["vague"][0] >= 18
     if "clear" in res:
         ok &= res["clear"]["questions"] == 0
+    if "learn" in res:
+        ok &= res["learn"][0] == res["learn"][1]
     if "scam" in res:
         ok &= res["scam"]["flagged"][0] == res["scam"]["flagged"][1]
         ok &= res["scam"]["false_positives"][0] == 0
@@ -239,9 +304,9 @@ def main() -> int:
         pass
     ap = argparse.ArgumentParser()
     ap.add_argument("-v", "--verbose", action="store_true")
-    ap.add_argument("--only", choices=["vague", "clear", "scam"])
+    ap.add_argument("--only", choices=["vague", "clear", "scam", "learn"])
     args = ap.parse_args()
-    res = run((args.only,) if args.only else ("vague", "clear", "scam"), args.verbose)
+    res = run((args.only,) if args.only else ("vague", "clear", "scam", "learn"), args.verbose)
     ok = passed(res)
     print(f"\n{'PASS' if ok else 'FAIL'}: {json.dumps(res)}")
     return 0 if ok else 1

@@ -34,6 +34,7 @@ class VisionBrain:
         if os.getenv("ACCEX_PROFILE", "default").strip().lower() == "senior":
             from .senior import SeniorMode
             self.senior = SeniorMode.from_env()
+            self._base_system = self.system
             self.system += self.senior.prompt_block()
 
     def ask(self, question: str, screenshot: Screenshot | None) -> LLMResponse:
@@ -43,6 +44,9 @@ class VisionBrain:
         resp = parse_llm_reply(raw)
         if self.senior is not None:
             resp = self.senior.apply(resp, question)
+            if self.senior.dirty:        # learned something: next turn sees the new profile
+                self.system = self._base_system + self.senior.prompt_block()
+                self.senior.dirty = False
         past_text = build_user_text(question, None, self.notes, for_history=True)
         self.notes.clear()
         self.turns.append((past_text, _compact_json(resp)))

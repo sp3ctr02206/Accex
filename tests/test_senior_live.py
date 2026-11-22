@@ -52,3 +52,7 @@ def test_scams_flagged_and_normal_pages_not(results):   # (d)
 
 def test_senior_latency_budget(results):
     assert results["clear"]["p50_senior"] - results["clear"]["p50_default"] <= 150
+
+
+def test_learns_and_uses_it_next_session(results):
+    assert results["learn"][0] == results["learn"][1]

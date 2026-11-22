@@ -232,8 +232,13 @@ in `brain/tests/snapshots/` prove the prompt, payloads and parser are byte-ident
   prizes, relative-in-trouble, crypto. Blocks the action and says "Stop. This looks like a scam".
 - **Voice**: shorter, simpler answers; slower ElevenLabs/Windows voice and lower mic threshold
   via `ACCEX_SENIOR_*` env (no voice code changed).
+- **Learning**: if the user mentions someone or something Accex can't identify, it asks once
+  ("Who is Pablo?") and saves the answer to `family.json` (`remember` field): new people,
+  nicknames (aliases) and what vague requests mean (`learned_notes`, max 30). Next session it
+  knows. Only learned when the user answers Accex's question or says "remember"; never from
+  the screen, `[continue]` steps or scam screens. Edit or delete entries in `family.json` by hand.
 - **Family log** `logs/family.jsonl`, one JSON object per line, text only:
-  `{"t": unix_time, "kind": "asked|clarified|blocked|done|failed", "text": str, "detail": str}`.
+  `{"t": unix_time, "kind": "asked|clarified|blocked|learned|done|failed", "text": str, "detail": str}`.
   For the UI/dashboard owner to read; no notifications are sent.
 - **Eval**: `python -m brain.eval_senior` (20 vague, 10 clear x 2 profiles, 8 scam + 8 normal
   screens). Live pytest: `ACCEX_LIVE_TESTS=1 pytest tests/test_senior_live.py`.

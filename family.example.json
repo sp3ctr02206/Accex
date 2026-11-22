@@ -2,13 +2,34 @@
   "user_name": "Carmen",
   "language": "English",
   "family": [
-    {"name": "Lucas", "relation": "grandson", "aliases": ["Luke"], "video_app": "WhatsApp",
-     "email": "lucas@example.com"},
-    {"name": "Ana", "relation": "daughter", "aliases": [], "video_app": "Zoom",
-     "email": "ana@example.com"}
+    {
+      "name": "Lucas",
+      "relation": "grandson",
+      "aliases": [
+        "Luke"
+      ],
+      "video_app": "WhatsApp",
+      "email": "lucas@example.com"
+    },
+    {
+      "name": "Ana",
+      "relation": "daughter",
+      "aliases": [],
+      "video_app": "Zoom",
+      "email": "ana@example.com"
+    }
   ],
-  "doctor": {"name": "Dr. Patel", "clinic": "Riverside Family Clinic",
-             "portal_url": "https://portal.example.com"},
+  "doctor": {
+    "name": "Dr. Patel",
+    "clinic": "Riverside Family Clinic",
+    "portal_url": "https://portal.example.com"
+  },
   "video_call_app": "WhatsApp",
-  "notes": "Copy this file to family.json (git-ignored) and fill in real details."
+  "notes": "Copy this file to family.json (git-ignored) and fill in real details.",
+  "learned_notes": [
+    {
+      "text": "'the bills thing' means paying the electricity bill on iberdrola.es",
+      "date": "2026-11-21"
+    }
+  ]
 }
