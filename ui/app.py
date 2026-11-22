@@ -2,8 +2,8 @@
 
 The window:
 - is frameless, always on top and never activated (Accex types into the user's app);
-- is cut to the pill's exact size and rounded shape (SetWindowRgn) every time the pill
-  changes, so there is no box around it;
+- is resized to the pill every time it changes, and Windows 11 rounds its frame (8px,
+  anti-aliased, with a soft native shadow), so there is no box or black corner around it;
 - is click-through (WS_EX_LAYERED | WS_EX_TRANSPARENT): clicks, including Accex's own,
   always reach the app underneath;
 - is excluded from screen capture, so Accex's own screenshots never contain it.
@@ -91,7 +91,7 @@ def on_shown(window) -> None:
     hwnd = window.native.Handle.ToInt32()
     make_click_through(hwnd)
     exclude_from_capture(hwnd)
-    shape_window(hwnd, START_W, START_H, 30)
+    round_corners(hwnd)
 
 
 class PillApi:
@@ -102,8 +102,8 @@ class PillApi:
         self._window = None
         self._size = (START_W, START_H)
 
-    def fit(self, width: float, height: float, radius: float = 30) -> None:
-        """Size the window to the pill and cut it to the pill's rounded shape."""
+    def fit(self, width: float, height: float, radius: float = 8) -> None:
+        """Size the window to the pill (Windows rounds the frame itself)."""
         w, h = int(width), int(height)
         if self._window is None:
             return
@@ -113,20 +113,22 @@ class PillApi:
             x, y = bottom_center(w, h)
             self._window.resize(w, h)
             self._window.move(x, y)
-            shape_window(self._window.native.Handle.ToInt32(), w, h, radius)
         except Exception:
             pass
 
 
-def shape_window(hwnd: int, width: int, height: int, radius: float) -> bool:
-    """Clip the window to a rounded rectangle (logical sizes); outside it the window
-    does not exist, so it is invisible and clicks go to whatever is underneath."""
+def round_corners(hwnd: int) -> bool:
+    """Ask Windows 11 to round the window frame (DWMWA_WINDOW_CORNER_PREFERENCE = ROUND).
+    DWM clips everything, including the WebView2 content, with anti-aliased 8px corners
+    (a GDI window region does not clip WebView2 and leaves black corners). The pill's
+    CSS radius (--radius) matches it."""
     if sys.platform != "win32":
         return False
-    s = _scale()
-    w, h, d = round(width * s), round(height * s), round(2 * radius * s)
-    rgn = ctypes.windll.gdi32.CreateRoundRectRgn(0, 0, w + 1, h + 1, d, d)
-    return bool(ctypes.windll.user32.SetWindowRgn(hwnd, rgn, True))
+    value = ctypes.c_int(2)                      # DWMWCP_ROUND
+    try:
+        return ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(value), 4) == 0
+    except Exception:
+        return False
 
 
 def open_pill(on_ready: Callable[[UiBridge, Any], None], title: str = "Accex") -> None:

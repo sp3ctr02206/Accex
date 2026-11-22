@@ -13,6 +13,7 @@
   --a1: #64d2ff;  /* orb colours, changed per state */
   --a2: #0a84ff;
   --a3: #bf5af2;
+  --radius: 8px;                       /* Windows 11 rounds the window frame to 8px */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   font-family: -apple-system, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI",
@@ -46,7 +47,7 @@ html, body {
   left: 0;
   flex: none;
   width: 320px;
-  border-radius: 30px;
+  border-radius: var(--radius);   /* = Windows 11 window corner radius */
   padding: 10px 14px 10px 10px;
   color: var(--text);
   background:
@@ -75,7 +76,7 @@ html, body {
   pointer-events: none;
 }
 
-.pill.expanded { width: 520px; border-radius: 26px; }
+.pill.expanded { width: 520px; }
 
 .row {
   display: flex;

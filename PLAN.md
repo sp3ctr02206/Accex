@@ -271,4 +271,5 @@ taskbar for people next to the user (family, judges). Without `--ui` nothing cha
   change to `interfaces.py` or the loop. Raw model output never reaches the page.
 - `python -m ui.preview` plays every state with fake events (no API) for design reviews.
 - Windows only blurs the desktop behind *active* windows, so the glass is a CSS dark
-  material rather than a live blur.
+  material rather than a live blur. The frame is rounded by Windows 11 itself (8px,
+  anti-aliased, native shadow); the card's CSS radius matches it so there are no black corners.
