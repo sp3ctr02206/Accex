@@ -230,7 +230,7 @@ in `brain/tests/snapshots/` prove the prompt, payloads and parser are byte-ident
   `brain/senior.py`: never two questions in a row.
 - **Scams** (`risk` field): fake virus/tech-support, gift cards, remote access, urgent bank,
   prizes, relative-in-trouble, crypto. Blocks the action and says "Stop. This looks like a scam".
-- **Voice**: shorter, simpler answers; slower ElevenLabs/Windows voice and lower mic threshold
+- **Voice**: shorter, simpler answers; brisk ElevenLabs voice (speed 1.1) and lower mic threshold
   via `ACCEX_SENIOR_*` env (no voice code changed).
 - **Learning**: if the user mentions someone or something Accex can't identify, it asks once
   ("Who is Pablo?") and saves the answer to `family.json` (`remember` field): new people,
