@@ -17,7 +17,7 @@ def test_default_profile_changes_nothing():
 def test_senior_profile_sets_voice_knobs_with_defaults():
     env = {"ACCEX_PROFILE": "senior", "ACCEX_ELEVEN_SPEED": "1.0"}
     assert apply_profile(env) == "senior"
-    assert env["ACCEX_ELEVEN_SPEED"] == "1.1"
+    assert env["ACCEX_ELEVEN_SPEED"] == "1.2"
     assert env["ACCEX_TTS_RATE"] == "1"
     assert env["ACCEX_STT_MIN_RMS"] == "30"
 

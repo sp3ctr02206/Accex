@@ -322,7 +322,7 @@ class Assistant:
 # Senior profile: brisk, clear voice settings, copied onto the existing knobs
 # before the voice is built. The default profile changes nothing.
 SENIOR_SETTINGS = {  # senior variable -> (existing variable it sets, default value)
-    "ACCEX_SENIOR_ELEVEN_SPEED": ("ACCEX_ELEVEN_SPEED", "1.1"),
+    "ACCEX_SENIOR_ELEVEN_SPEED": ("ACCEX_ELEVEN_SPEED", "1.2"),
     "ACCEX_SENIOR_TTS_RATE": ("ACCEX_TTS_RATE", "1"),
     "ACCEX_SENIOR_STT_MIN_RMS": ("ACCEX_STT_MIN_RMS", "30"),
 }
