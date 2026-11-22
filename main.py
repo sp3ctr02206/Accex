@@ -318,6 +318,41 @@ class Assistant:
             print(f"[ERROR] {spoken} ({detail}; speaker failed: {e!r})", file=sys.stderr)
 
 
+# ---------------------------------------------------------------- profiles
+# Senior profile: slower, more patient voice settings, copied onto the existing knobs
+# before the voice is built. The default profile changes nothing.
+SENIOR_SETTINGS = {  # senior variable -> (existing variable it sets, default value)
+    "ACCEX_SENIOR_ELEVEN_SPEED": ("ACCEX_ELEVEN_SPEED", "0.85"),
+    "ACCEX_SENIOR_TTS_RATE": ("ACCEX_TTS_RATE", "-2"),
+    "ACCEX_SENIOR_STT_MIN_RMS": ("ACCEX_STT_MIN_RMS", "30"),
+}
+
+
+def apply_profile(env=os.environ) -> str:
+    """Apply ACCEX_PROFILE to the environment; returns the active profile name."""
+    if env.get("ACCEX_PROFILE", "default").strip().lower() != "senior":
+        return "default"
+    for senior_var, (target, default) in SENIOR_SETTINGS.items():
+        env[target] = env.get(senior_var) or default
+    return "senior"
+
+
+def share_vocabulary(assistant: "Assistant") -> int:
+    """Senior mode: pass family names to speech recognition if it supports
+    set_vocabulary(words) (optional hook in voice/stt.py). Returns how many were sent."""
+    senior = getattr(assistant.brain, "senior", None)
+    hook = getattr(assistant.stt, "set_vocabulary", None)
+    words = senior.vocabulary() if senior is not None else []
+    if not (hook and words):
+        return 0
+    try:
+        hook(words)
+    except Exception as e:
+        assistant.log.log("error", where="set_vocabulary", detail=repr(e))
+        return 0
+    return len(words)
+
+
 # ---------------------------------------------------------------- wiring
 def parse_mocks(value: str) -> set[str]:
     parts = {p.strip().lower() for p in value.split(",") if p.strip()}
@@ -364,6 +399,7 @@ def main(argv: list[str] | None = None) -> int:
         os.environ["ACCEX_DRY_RUN"] = "1"
 
     mocked = parse_mocks(args.mock)
+    profile = apply_profile()
     try:
         assistant = build(mocked)
     except NotImplementedError as e:
@@ -373,6 +409,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Startup failed: {e.spoken} ({e})", file=sys.stderr)
         return 1
 
+    if profile == "senior":
+        senior = getattr(assistant.brain, "senior", None)
+        people = len((senior.profile or {}).get("family", [])) if senior else 0
+        hints = share_vocabulary(assistant)
+        print(f"Senior mode on: {people} family members in the profile, "
+              f"{hints} names sent to speech recognition.")
     real = [p for p in PACKAGES if p not in mocked]
     print(f"Accex starting. Real: {', '.join(real) or 'none'}. "
           f"Mocked: {', '.join(p for p in PACKAGES if p in mocked) or 'none'}.")
