@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accex</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Visual companion for people next to the user; screen readers ignore it. -->
+  <main id="stage" aria-hidden="true">
+    <section id="pill" class="pill" data-state="idle">
+      <div class="glass-edge"></div>
+      <header class="row">
+        <div class="orb"><span class="orb-core"></span><span class="orb-glow"></span></div>
+        <div class="status">
+          <span id="title" class="title">Accex</span>
+          <span id="sub" class="sub">Hold the key to talk</span>
+        </div>
+        <div class="wave" id="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <span id="badge" class="badge" hidden>Senior</span>
+      </header>
+      <div class="details" id="details"><div class="details-inner">
+        <div class="line you" id="youLine" hidden>
+          <span class="label">You</span><p id="you"></p>
+        </div>
+        <div class="line step" id="stepLine" hidden>
+          <span class="label" id="stepLabel">Step 1</span>
+          <div class="step-body">
+            <p id="step"></p>
+            <div class="progress"><i id="bar"></i></div>
+          </div>
+        </div>
+        <div class="line reply" id="replyLine" hidden>
+          <span class="label">Accex</span><p id="reply"></p>
+        </div>
+      </div></div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

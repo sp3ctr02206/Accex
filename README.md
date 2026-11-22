@@ -22,6 +22,8 @@ python main.py --mock all              # no keys needed: type questions, read th
 python main.py --mock brain,actions    # real voice, fake brain and actions
 python main.py                         # everything real
 python main.py --demo --dry-run        # print every event; log actions instead of running them
+python main.py --ui                    # with the floating glass pill
+python -m ui.preview                   # design preview of the pill (no API)
 pytest                                 # tests
 ```
 
@@ -37,6 +39,7 @@ Hold **Right Ctrl** to talk and release it to send. A quick tap stops Accex spea
 | `brain/` | P2 | Screen capture, vision LLM, prompt, memory |
 | `actions/` | P3 | Action registry, executor, confirmation |
 | `demo/` | P3 | Event log, demo screens, demo checklist |
+| `ui/` | minimalist-interface | Floating glass pill (pywebview), opt-in with `--ui` |
 | `mocks/` | each owner | Fakes for every package |
 
 See [PLAN.md](PLAN.md) for the team plan.

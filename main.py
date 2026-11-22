@@ -392,6 +392,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="comma list of packages to mock: all, voice, brain, actions, demo")
     ap.add_argument("--demo", action="store_true", help="verbose event log (ACCEX_DEMO=1)")
     ap.add_argument("--dry-run", action="store_true", help="log actions instead of running them")
+    ap.add_argument("--ui", action="store_true", default=os.getenv("ACCEX_UI", "0") == "1",
+                    help="show the floating glass pill (ACCEX_UI=1)")
     args = ap.parse_args(argv)
     if args.demo:
         os.environ["ACCEX_DEMO"] = "1"
@@ -400,24 +402,32 @@ def main(argv: list[str] | None = None) -> int:
 
     mocked = parse_mocks(args.mock)
     profile = apply_profile()
-    try:
+
+    def make() -> Assistant:
         assistant = build(mocked)
+        if profile == "senior":
+            senior = getattr(assistant.brain, "senior", None)
+            people = len((senior.profile or {}).get("family", [])) if senior else 0
+            hints = share_vocabulary(assistant)
+            print(f"Senior mode on: {people} family members in the profile, "
+                  f"{hints} names sent to speech recognition.")
+        real = [p for p in PACKAGES if p not in mocked]
+        print(f"Accex starting. Real: {', '.join(real) or 'none'}. "
+              f"Mocked: {', '.join(p for p in PACKAGES if p in mocked) or 'none'}.")
+        return assistant
+
+    if args.ui:
+        from ui.app import run_with_pill
+        return run_with_pill(make, {"profile": profile, "hotkey": hotkey_name()})
+
+    try:
+        assistant = make()
     except NotImplementedError as e:
         print(f"Not implemented yet: {e}", file=sys.stderr)
         return 1
     except AccexError as e:
         print(f"Startup failed: {e.spoken} ({e})", file=sys.stderr)
         return 1
-
-    if profile == "senior":
-        senior = getattr(assistant.brain, "senior", None)
-        people = len((senior.profile or {}).get("family", [])) if senior else 0
-        hints = share_vocabulary(assistant)
-        print(f"Senior mode on: {people} family members in the profile, "
-              f"{hints} names sent to speech recognition.")
-    real = [p for p in PACKAGES if p not in mocked]
-    print(f"Accex starting. Real: {', '.join(real) or 'none'}. "
-          f"Mocked: {', '.join(p for p in PACKAGES if p in mocked) or 'none'}.")
     assistant.run()
     return 0
 

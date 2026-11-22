@@ -253,3 +253,22 @@ in `voice/stt.py`:
 
 and use `prompt=getattr(self, "hint", VOCABULARY_HINT)` in `_call`. `main.py` already calls
 `set_vocabulary()` in senior mode when it exists.
+
+---
+
+## Minimalist interface (branch `minimalist-interface`)
+
+`python main.py --ui` (or `ACCEX_UI=1`) shows a floating Apple-style glass pill above the
+taskbar for people next to the user (family, judges). Without `--ui` nothing changes.
+
+- States: idle, listening (waveform), thinking (shimmer), speaking, acting (Step n with a
+  progress bar), waiting for an answer, done, scam blocked (red), error. Expands while
+  something happens and collapses afterwards.
+- Never takes focus, is click-through, and is excluded from screen capture, so Accex's
+  model never sees or clicks it. `ACCEX_UI_CAPTURABLE=1` lets OBS record it for the demo
+  video (the model then sees it too).
+- Fed by `ui/bridge.py` (TapLog / TapSpeaker wrap the existing EventLog and Speaker); no
+  change to `interfaces.py` or the loop. Raw model output never reaches the page.
+- `python -m ui.preview` plays every state with fake events (no API) for design reviews.
+- Windows only blurs the desktop behind *active* windows, so the glass is a CSS dark
+  material rather than a live blur.

@@ -1,0 +1,310 @@
+/* Accex pill: dark "liquid glass" in the spirit of Apple's materials.
+   The window is transparent; everything visible is the pill itself. */
+
+:root {
+  --glass: rgb(30, 31, 38);           /* dark material (no desktop blur behind a */
+  --glass-hi: rgba(255, 255, 255, 0.15); /* non-activating window on Windows)   */
+  --glass-lo: rgba(255, 255, 255, 0.02);
+  --stroke: rgba(255, 255, 255, 0.18);
+  --text: rgba(255, 255, 255, 0.96);
+  --text-2: rgba(235, 235, 245, 0.62);
+  --text-3: rgba(235, 235, 245, 0.38);
+  --accent: #0a84ff;
+  --a1: #64d2ff;  /* orb colours, changed per state */
+  --a2: #0a84ff;
+  --a3: #bf5af2;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  font-family: -apple-system, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI",
+               system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html, body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+/* The native window is cut to exactly the pill's size and rounded shape (ui/app.py), so
+   the pill sits at the top-left at its natural size and nothing is drawn outside it
+   (no outer shadows: they would be clipped). */
+#stage {
+  position: fixed;
+  inset: 0;
+  display: block;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------------ pill */
+.pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  flex: none;
+  width: 320px;
+  border-radius: 30px;
+  padding: 10px 14px 10px 10px;
+  color: var(--text);
+  background:
+    radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--a2) 22%, transparent), transparent 55%),
+    linear-gradient(160deg, var(--glass-hi) 0%, var(--glass-lo) 45%, rgba(255,255,255,0.05) 100%),
+    var(--glass);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: background-color 0.4s var(--ease);   /* size changes are instant: the */
+  overflow: hidden;                                 /* window is re-cut to match     */
+}
+
+/* thin specular rim, brighter at the top like Apple's glass */
+.glass-edge {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.08) 40%,
+                              rgba(255,255,255,0.04) 70%, rgba(255,255,255,0.18));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.pill.expanded { width: 520px; border-radius: 26px; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+}
+
+/* ------------------------------------------------------------------ orb */
+.orb {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  isolation: isolate;
+}
+
+.orb-core {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--a1), var(--a2), var(--a3), var(--a1));
+  filter: saturate(1.2);
+  animation: spin 6s linear infinite, breathe 3.2s var(--ease) infinite;
+  transition: inset 0.4s var(--spring);
+}
+
+.orb-core::after {          /* glassy highlight */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.75), rgba(255,255,255,0) 45%),
+              radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.25));
+}
+
+.orb-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(from 90deg, var(--a1), var(--a3), var(--a2), var(--a1));
+  filter: blur(12px);
+  opacity: 0.45;
+  z-index: -1;
+  animation: spin 9s linear infinite reverse;
+  transition: opacity 0.4s var(--ease);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%, 100% { transform: scale(0.88); } 50% { transform: scale(1); } }
+@keyframes pulse { 0%, 100% { transform: scale(0.9); } 50% { transform: scale(1.08); } }
+
+/* ------------------------------------------------------------------ text */
+.status {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.15;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sub {
+  font-size: 12.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s var(--ease);
+}
+
+.badge {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #ffd60a;
+  background: rgba(255, 214, 10, 0.14);
+  border: 1px solid rgba(255, 214, 10, 0.28);
+}
+
+/* ------------------------------------------------------------------ waveform */
+.wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.3s var(--ease), transform 0.4s var(--spring);
+}
+
+.wave i {
+  display: block;
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--a1), var(--a2));
+  transform: scaleY(0.25);
+}
+
+.pill[data-state="listening"] .wave,
+.pill[data-state="speaking"] .wave { opacity: 1; transform: scale(1); }
+
+.pill[data-state="listening"] .wave i,
+.pill[data-state="speaking"] .wave i { animation: bar 0.9s var(--ease) infinite; }
+
+.wave i:nth-child(2) { animation-delay: -0.15s !important; }
+.wave i:nth-child(3) { animation-delay: -0.45s !important; }
+.wave i:nth-child(4) { animation-delay: -0.3s !important; }
+.wave i:nth-child(5) { animation-delay: -0.6s !important; }
+.wave i:nth-child(6) { animation-delay: -0.75s !important; }
+.wave i:nth-child(7) { animation-delay: -0.2s !important; }
+
+@keyframes bar { 0%, 100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+
+/* ------------------------------------------------------------------ details */
+.details { display: none; }
+.pill.expanded .details { display: block; margin-top: 8px; animation: rise 0.4s var(--ease); }
+
+.details-inner { min-height: 0; overflow: hidden; }
+
+.line {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 6px 7px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  animation: rise 0.45s var(--ease);
+}
+
+.line[hidden] { display: none; }
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.line p {
+  font-size: 14px;
+  line-height: 1.38;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line.you p { color: var(--text-2); }
+
+.step-body { display: flex; flex-direction: column; gap: 7px; }
+
+.progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.progress i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--a1), var(--a2));
+  transition: width 0.6s var(--ease);
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ------------------------------------------------------------------ states */
+.pill[data-state="idle"] .orb-core { inset: 9px; animation: spin 10s linear infinite, breathe 4s var(--ease) infinite; }
+.pill[data-state="idle"] .orb-glow { opacity: 0.2; }
+.pill[data-state="idle"] { --a1: #8e8e93; --a2: #d1d1d6; --a3: #636366; }
+
+.pill[data-state="listening"] { --a1: #64d2ff; --a2: #0a84ff; --a3: #5e5ce6; }
+.pill[data-state="listening"] .orb-core { animation: spin 2.4s linear infinite, pulse 0.9s var(--ease) infinite; }
+.pill[data-state="listening"] .orb-glow { opacity: 0.8; }
+
+.pill[data-state="thinking"] { --a1: #bf5af2; --a2: #5e5ce6; --a3: #ff375f; }
+.pill[data-state="thinking"] .orb-core { animation: spin 1.1s linear infinite, breathe 1.6s var(--ease) infinite; }
+.pill[data-state="thinking"] .sub {
+  background: linear-gradient(90deg, var(--text-3), var(--text), var(--text-3));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.pill[data-state="speaking"] { --a1: #30d158; --a2: #64d2ff; --a3: #0a84ff; }
+.pill[data-state="speaking"] .orb-glow { opacity: 0.7; }
+
+.pill[data-state="acting"] { --a1: #0a84ff; --a2: #64d2ff; --a3: #30d158; }
+.pill[data-state="acting"] .orb-core { animation: spin 1.6s linear infinite; }
+
+.pill[data-state="asking"] { --a1: #ffd60a; --a2: #ff9f0a; --a3: #ff6b3d; }
+.pill[data-state="asking"] .orb-core { animation: spin 4s linear infinite, pulse 1.4s var(--ease) infinite; }
+
+.pill[data-state="done"] { --a1: #30d158; --a2: #34c759; --a3: #64d2ff; }
+
+.pill[data-state="blocked"], .pill[data-state="error"] { --a1: #ff453a; --a2: #ff375f; --a3: #ff9f0a; }
+.pill[data-state="blocked"] {
+  background:
+    linear-gradient(160deg, rgba(255, 69, 58, 0.32) 0%, rgba(255, 69, 58, 0.08) 60%),
+    var(--glass);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 69, 58, 0.45);
+}
+.pill[data-state="blocked"] .orb-core,
+.pill[data-state="error"] .orb-core { animation: pulse 0.7s var(--ease) infinite; }
+.pill[data-state="blocked"] .sub, .pill[data-state="error"] .sub { color: #ff9f97; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important;
+                           transition-duration: 0.001s !important; }
+}
