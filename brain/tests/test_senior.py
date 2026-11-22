@@ -269,3 +269,28 @@ def test_dangerous_action_still_needs_spoken_yes_in_senior_mode(senior_env):
     ])
     a.run_turn()
     assert executor.executed == [] and a.pending is not None
+
+
+def test_format_question_does_not_repeat_options_already_asked():
+    assert format_question("Which grandchild should I call, Lucas or Sofia?",
+                           ["Lucas", "Sofia"]) == "Which grandchild should I call, Lucas or Sofia?"
+    assert format_question("Who should I call, Lucas?", ["Lucas", "Sofia"]) == \
+        "Who should I call, Lucas? Lucas, or Sofia?"
+
+
+def test_yes_no_clarify_with_action_becomes_confirmation(tmp_path):
+    m = mode(tmp_path)
+    r = apply(m, reply("I'll reply: Thanks. Shall I send it?",
+                       {"type": "email_reply", "params": {"body": "Thanks"}},
+                       clarify={"question": "Shall I send it?", "options": []}),
+              "Reply to this email saying thanks")
+    assert r.action == Action("email_reply", {"body": "Thanks"})
+    assert r.needs_confirmation is True and r.say == "I'll reply: Thanks. Shall I send it?"
+    assert m.last_was_question is False
+
+
+def test_real_choice_with_action_still_asks(tmp_path):
+    m = mode(tmp_path)
+    r = apply(m, reply("Calling Lucas.", {"type": "open_app", "params": {"name": "whatsapp"}},
+                       clarify={"question": "Who?", "options": ["Lucas", "Sofia"]}))
+    assert r.action is None and r.say == "Who? Lucas, or Sofia?"

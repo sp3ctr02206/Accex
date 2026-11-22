@@ -214,3 +214,37 @@ Hand this file to your Claude Code session along with `interfaces.py`, and tell 
 | Talking over NVDA | The PTT key silences NVDA, and Accex speaks before acting. Stretch: speak through NVDA. |
 | Gmail UI changes | Shortcuts enabled and the email staged (checklist). `email_reply` rehearsed. |
 | Prompt injection | The prompt treats screen text as data, and the gate confirms dangerous actions regardless of the model. |
+
+---
+
+## Senior mode (P2, branch `p2-senior`)
+
+Opt-in with `ACCEX_PROFILE=senior`. With the default profile nothing changes: golden snapshots
+in `brain/tests/snapshots/` prove the prompt, payloads and parser are byte-identical.
+
+- **Family profile** `family.json` (copy `family.example.json`; git-ignored): family names,
+  relations, aliases, video app, doctor and patient-portal URL. Missing file = works without it.
+- **Vague requests**: the model resolves "my grandson" / "that doctor thing" from the profile
+  and the screen, acts when one reading is clearly best, and asks at most ONE question with at
+  most 2 options (`clarify` field) only when the step has consequences. Enforced in
+  `brain/senior.py`: never two questions in a row.
+- **Scams** (`risk` field): fake virus/tech-support, gift cards, remote access, urgent bank,
+  prizes, relative-in-trouble, crypto. Blocks the action and says "Stop. This looks like a scam".
+- **Voice**: shorter, simpler answers; slower ElevenLabs/Windows voice and lower mic threshold
+  via `ACCEX_SENIOR_*` env (no voice code changed).
+- **Family log** `logs/family.jsonl`, one JSON object per line, text only:
+  `{"t": unix_time, "kind": "asked|clarified|blocked|done|failed", "text": str, "detail": str}`.
+  For the UI/dashboard owner to read; no notifications are sent.
+- **Eval**: `python -m brain.eval_senior` (20 vague, 10 clear x 2 profiles, 8 scam + 8 normal
+  screens). Live pytest: `ACCEX_LIVE_TESTS=1 pytest tests/test_senior_live.py`.
+
+**For P1 (voice), optional:** to pass family names to speech recognition, add to `OpenAISTT`
+in `voice/stt.py`:
+
+```python
+    def set_vocabulary(self, words: list[str]) -> None:
+        self.hint = VOCABULARY_HINT + " " + ", ".join(words)
+```
+
+and use `prompt=getattr(self, "hint", VOCABULARY_HINT)` in `_call`. `main.py` already calls
+`set_vocabulary()` in senior mode when it exists.

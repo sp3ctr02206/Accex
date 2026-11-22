@@ -160,6 +160,8 @@ for example "Opening a video call with Lucas."
 (calling or messaging a person, sending, paying, deleting). Then put ONE short question \
 with at most 2 options in "clarify", and still put your best guess in "action".
 - Never clarify a clear request: if the user says exactly what they want, do it.
+- "clarify" is only for choosing between different meanings. Never use it to confirm \
+sending, deleting or paying: for that, set needs_confirmation to true as usual.
 - Never ask two questions in a row.
 
 Scams:
@@ -199,6 +201,8 @@ def parse_clarify(value: Any) -> tuple[str, list[str]] | None:
 
 def format_question(question: str, options: list[str]) -> str:
     q = question.rstrip(" ?.") + "?"
+    if options and all(o.lower() in q.lower() for o in options):
+        return q                       # the model already named the options
     if len(options) == 2:
         return f"{q} {options[0]}, or {options[1]}?"
     if len(options) == 1:
@@ -262,6 +266,13 @@ class SeniorMode:
                                needs_confirmation=False, raw=resp.raw)
 
         clarify = parse_clarify(obj.get("clarify"))
+        if clarify and resp.action is not None and len(clarify[1]) < 2:
+            # Not a choice between meanings but a yes/no about a concrete action: keep the
+            # action and let the normal spoken-confirmation flow ask once.
+            self.last_was_question = False
+            say = resp.say if resp.say.rstrip().endswith("?") else format_question(*clarify)
+            return LLMResponse(say=say, action=resp.action, needs_confirmation=True,
+                               raw=resp.raw)
         if clarify and not self.last_was_question:
             self.last_was_question = True
             say = format_question(*clarify)
