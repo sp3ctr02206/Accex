@@ -1,0 +1,14 @@
+{
+  "user_name": "Carmen",
+  "language": "English",
+  "family": [
+    {"name": "Lucas", "relation": "grandson", "aliases": ["Luke"], "video_app": "WhatsApp",
+     "email": "lucas@example.com"},
+    {"name": "Ana", "relation": "daughter", "aliases": [], "video_app": "Zoom",
+     "email": "ana@example.com"}
+  ],
+  "doctor": {"name": "Dr. Patel", "clinic": "Riverside Family Clinic",
+             "portal_url": "https://portal.example.com"},
+  "video_call_app": "WhatsApp",
+  "notes": "Copy this file to family.json (git-ignored) and fill in real details."
+}

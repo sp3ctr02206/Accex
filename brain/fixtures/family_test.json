@@ -1,0 +1,16 @@
+{
+  "user_name": "Carmen",
+  "language": "English",
+  "family": [
+    {"name": "Lucas", "relation": "grandson", "aliases": ["Luke"], "video_app": "WhatsApp",
+     "email": "lucas.demo@example.com"},
+    {"name": "Sofia", "relation": "granddaughter", "aliases": ["Sofi"], "video_app": "WhatsApp",
+     "email": "sofia.demo@example.com"},
+    {"name": "Ana", "relation": "daughter", "aliases": ["my daughter"], "video_app": "Zoom",
+     "email": "ana.demo@example.com"}
+  ],
+  "doctor": {"name": "Dr. Patel", "clinic": "Riverside Family Clinic",
+             "portal_url": "https://portal.riversideclinic.example.com"},
+  "video_call_app": "WhatsApp",
+  "notes": "Likes Frank Sinatra. Reads email in Gmail."
+}
