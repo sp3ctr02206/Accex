@@ -8,3 +8,8 @@ venv/
 *.wav
 *.mp4
 family.json
+brag-output/work/*
+!brag-output/work/composition/
+!brag-output/work/capture.mjs
+!brag-output/work/music.py
+!brag-output/work/package.json

@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Accex launch</title>
+<!-- The real pill stylesheet, copied unchanged from ui/web/style.css -->
+<link rel="stylesheet" href="pill.css">
+<style>
+  /* Video overrides: every value is driven by render(t), so no CSS transitions. */
+  *, *::before, *::after { transition: none !important; }
+  .details, .pill.expanded .details, .line { animation: none !important; }
+  html, body { width: 1920px; height: 1080px; background: #000; overflow: hidden; }
+  body { position: relative; font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+         color: #fff; -webkit-font-smoothing: antialiased; }
+  .scene { position: absolute; inset: 0; display: none; }
+
+  /* 1 hook */
+  #s1 { background: #000; }
+  .hook { position: absolute; left: 0; right: 0; top: 440px; text-align: center; font-size: 118px;
+          font-weight: 650; letter-spacing: -0.035em; line-height: 1; }
+  .hook span { display: inline-block; margin: 0 0.12em; }
+
+  /* 2 reveal */
+  #s2 { background: radial-gradient(60% 70% at 50% 62%, rgba(10,132,255,0.20), transparent 70%), #06070b; }
+  #quote { position: absolute; left: 0; right: 0; top: 250px; text-align: center; font-size: 74px;
+           font-weight: 600; letter-spacing: -0.025em; color: rgba(255,255,255,0.96); }
+  #quote .caret { display: inline-block; width: 5px; height: 0.95em; margin-left: 6px; vertical-align: -0.12em;
+                  background: #64d2ff; border-radius: 2px; }
+  #kicker { position: absolute; left: 0; right: 0; top: 186px; text-align: center; font-size: 26px;
+            font-weight: 600; letter-spacing: 0.22em; color: rgba(235,235,245,0.55); text-transform: uppercase; }
+
+  /* 3-4 desktop */
+  #desk { background:
+      radial-gradient(55% 60% at 22% 18%, rgba(47,92,214,0.75), transparent 70%),
+      radial-gradient(50% 60% at 85% 95%, rgba(126,58,190,0.65), transparent 70%),
+      radial-gradient(40% 40% at 70% 30%, rgba(20,160,200,0.30), transparent 70%),
+      #0a0e22; }
+  .headline { position: absolute; left: 0; right: 0; top: 56px; text-align: center; font-size: 60px;
+              font-weight: 650; letter-spacing: -0.03em; text-shadow: 0 4px 30px rgba(0,0,0,0.35); }
+  .win { position: absolute; left: 360px; top: 168px; width: 1200px; height: 560px; border-radius: 14px;
+         overflow: hidden; box-shadow: 0 40px 90px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.10); }
+
+  /* generic music app */
+  #app { background: #17181d; color: #fff; }
+  #app .side { position: absolute; left: 0; top: 0; bottom: 72px; width: 210px; background: #111216;
+               padding: 26px 24px; display: flex; flex-direction: column; gap: 22px; }
+  #app .side div { display: flex; align-items: center; gap: 14px; font-size: 19px; font-weight: 600;
+                   color: rgba(255,255,255,0.62); }
+  #app .side div:first-child { color: #fff; }
+  #app .side i { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,0.22); }
+  #search { position: absolute; left: 240px; top: 20px; width: 460px; height: 46px; border-radius: 23px;
+            background: #2a2b33; display: flex; align-items: center; padding: 0 20px; gap: 12px;
+            font-size: 19px; color: rgba(255,255,255,0.45); box-shadow: inset 0 0 0 2px transparent; }
+  #search.focus { box-shadow: inset 0 0 0 2px #0a84ff; }
+  #search.typed { color: #fff; }
+  #search .mag { width: 16px; height: 16px; border: 2.5px solid currentColor; border-radius: 50%; flex: none; opacity: .8; }
+  #search .caret2 { display: inline-block; width: 2px; height: 22px; background: #fff; margin-left: 1px; }
+  .main { position: absolute; left: 240px; top: 96px; right: 30px; bottom: 90px; }
+  .main h3 { font-size: 26px; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 18px; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .tile { height: 236px; border-radius: 10px; background: #23242b; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .tile b { flex: 1; border-radius: 6px; }
+  .tile u { height: 12px; width: 70%; border-radius: 6px; background: rgba(255,255,255,0.18); text-decoration: none; }
+  #results { position: absolute; inset: 0; }
+  .top { display: flex; align-items: center; gap: 26px; padding: 22px; border-radius: 12px; background: #23242b; width: 620px; }
+  .top.hl { background: #2b3447; box-shadow: inset 0 0 0 2px rgba(10,132,255,0.8); }
+  .art { width: 132px; height: 132px; border-radius: 8px; flex: none;
+         background: radial-gradient(circle at 30% 30%, #ffcf6b, transparent 55%), linear-gradient(135deg, #b8325a, #3a1f6e); }
+  .top .t1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
+  .top .t2 { font-size: 20px; color: rgba(255,255,255,0.62); margin-top: 6px; }
+  .rowph { height: 14px; border-radius: 7px; background: rgba(255,255,255,0.10); margin-top: 26px; width: 560px; }
+  #np { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; background: #0f1014; display: flex;
+        align-items: center; padding: 0 20px; gap: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+  #np .art { width: 48px; height: 48px; border-radius: 5px; }
+  #np .nt { width: 230px; } #np .nt b { display: block; font-size: 17px; } #np .nt span { font-size: 14px; color: rgba(255,255,255,0.6); }
+  #np .ctl { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+  #np .pause { display: flex; gap: 4px; } #np .pause i { width: 4px; height: 14px; background: #111; border-radius: 1px; }
+  #np .track { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.15); margin: 0 30px 0 20px; overflow: hidden; }
+  #np .track i { display: block; height: 100%; background: #fff; border-radius: 3px; }
+
+  /* generic mail window (rebuilt from brain/fixtures/senior/scam_grandson_giftcards.png) */
+  #mail { background: #fff; color: #1d2433; }
+  #mail .side { position: absolute; left: 0; top: 0; bottom: 0; width: 230px; background: #f4f6fa; padding: 34px 30px;
+                display: flex; flex-direction: column; gap: 24px; font-size: 21px; }
+  #mail .side b { font-weight: 600; }
+  #mail .body { position: absolute; left: 290px; top: 40px; right: 40px; }
+  #mail h2 { font-size: 40px; font-weight: 750; letter-spacing: -0.02em; margin-bottom: 18px; }
+  #mail p { font-size: 23px; line-height: 1.25; padding: 7px 12px; margin-left: -12px; border-radius: 8px; }
+  #mail .from { color: #5a6275; }
+  #mail p.flag { background: rgba(255,69,58,0.10); box-shadow: inset 0 0 0 2.5px #ff453a; }
+
+  #cursor { position: absolute; width: 34px; height: 46px; left: 0; top: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,.45)); }
+  #ripple { position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%;
+            border: 3px solid #64d2ff; }
+
+  /* 5 outro */
+  #s5 { background: radial-gradient(50% 55% at 50% 36%, rgba(94,92,230,0.28), transparent 70%), #05060a; }
+  .bigorb { position: absolute; left: 940px; top: 250px; transform-origin: 20px 20px;
+            --a1: #64d2ff; --a2: #0a84ff; --a3: #bf5af2; }
+  #word { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font-size: 150px; font-weight: 700; letter-spacing: -0.045em; }
+  #tag { position: absolute; left: 0; right: 0; top: 660px; text-align: center; font-size: 56px; font-weight: 600;
+         letter-spacing: -0.02em; color: rgba(255,255,255,0.92); }
+  #fine { position: absolute; left: 0; right: 0; top: 770px; text-align: center; font-size: 30px; font-weight: 500;
+          color: rgba(235,235,245,0.6); }
+
+  /* the pill layer: real markup, scaled; anchored at its bottom centre */
+  #pillwrap { position: absolute; left: 0; top: 0; width: 520px; transform-origin: 50% 100%; }
+  #pillwrap .pill { position: relative; margin: 0 auto; }
+</style>
+</head>
+<body>
+  <div id="s1" class="scene">
+    <div class="hook" id="hook1"><span>Can't</span><span>see</span><span>your</span><span>screen?</span></div>
+    <div class="hook" id="hook2"><span>Just</span><span>ask.</span></div>
+  </div>
+
+  <div id="s2" class="scene">
+    <div id="kicker">Hold a key · speak</div>
+    <div id="quote"></div>
+  </div>
+
+  <div id="desk" class="scene">
+    <div class="headline" id="head3">It sees your screen. It does the clicks.</div>
+    <div class="headline" id="head4">Senior mode stops scams.</div>
+    <div id="app" class="win">
+      <div class="side"><div><i></i>Home</div><div><i></i>Search</div><div><i></i>Library</div></div>
+      <div id="search"><span class="mag"></span><span id="q">Search songs, artists…</span></div>
+      <div class="main">
+        <div id="recent"><h3>Recently played</h3>
+          <div class="tiles">
+            <div class="tile"><b style="background:linear-gradient(135deg,#2c5bd6,#59c3ff)"></b><u></u></div>
+            <div class="tile"><b style="background:linear-gradient(135deg,#7a3ac0,#ff6fa6)"></b><u></u></div>
+            <div class="tile"><b style="background:linear-gradient(135deg,#1f8f6a,#9be36b)"></b><u></u></div>
+            <div class="tile"><b style="background:linear-gradient(135deg,#d0682b,#ffd36b)"></b><u></u></div>
+          </div></div>
+        <div id="results"><h3>Top result</h3>
+          <div class="top" id="toprow"><div class="art"></div>
+            <div><div class="t1">Bohemian Rhapsody</div><div class="t2">Song · Queen</div></div></div>
+          <div class="rowph"></div><div class="rowph" style="width:430px"></div></div>
+      </div>
+      <div id="np"><div class="art"></div><div class="nt"><b>Bohemian Rhapsody</b><span>Queen</span></div>
+        <div class="ctl"><div class="pause"><i></i><i></i></div></div><div class="track"><i id="npbar"></i></div></div>
+    </div>
+    <div id="mail" class="win">
+      <div class="side"><b>Compose</b><span>Inbox&nbsp;&nbsp;3</span><span>Starred</span><span>Sent</span><span>Drafts</span></div>
+      <div class="body">
+        <h2>URGENT help Grandma</h2>
+        <p class="from">From: Lucas &lt;lucas.help.urgent@mailbox-fast.example&gt;</p>
+        <p>Grandma it's me, I lost my phone and I'm in trouble with the police.</p>
+        <p>Please don't tell mom. I need $2,000 today.</p>
+        <p id="giftline">Buy Apple gift cards at the pharmacy and send me photos of the codes.</p>
+        <p>Hurry please, I can't talk on the phone.</p>
+      </div>
+    </div>
+    <svg id="cursor" viewBox="0 0 24 32"><path d="M2 2 L2 26 L8.5 20 L12.5 30 L16.5 28.3 L12.6 18.6 L21 18.6 Z"
+         fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <div id="ripple"></div>
+  </div>
+
+  <div id="s5" class="scene">
+    <div class="bigorb" id="bigorb"><div class="orb"><span class="orb-core"></span><span class="orb-glow"></span></div></div>
+    <div id="word">Accex</div>
+    <div id="tag">Your computer, by voice.</div>
+    <div id="fine">For blind &amp; low-vision users · Built at Cutie Hack 2026</div>
+  </div>
+
+  <!-- markup copied from ui/web/index.html -->
+  <div id="pillwrap">
+    <section id="pill" class="pill" data-state="idle">
+      <div class="glass-edge"></div>
+      <header class="row">
+        <div class="orb"><span class="orb-core"></span><span class="orb-glow"></span></div>
+        <div class="status">
+          <span id="title" class="title">Accex</span>
+          <span id="sub" class="sub">Hold the key to talk</span>
+        </div>
+        <div class="wave" id="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <span id="badge" class="badge" hidden>Senior</span>
+      </header>
+      <div class="details" id="details"><div class="details-inner">
+        <div class="line you" id="youLine" hidden><span class="label">You</span><p id="you"></p></div>
+        <div class="line step" id="stepLine" hidden>
+          <span class="label" id="stepLabel">Step 1</span>
+          <div class="step-body"><p id="step"></p><div class="progress"><i id="bar"></i></div></div>
+        </div>
+        <div class="line reply" id="replyLine" hidden><span class="label">Accex</span><p id="reply"></p></div>
+      </div></div>
+    </section>
+  </div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const spring = (x) => { x = clamp(x); return 1 - Math.exp(-6.5 * x) * Math.cos(10 * x); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const show = (el, on) => { el.style.display = on ? (el.classList.contains("scene") ? "block" : "") : "none"; };
+
+// state titles from ui/web/app.js
+const STATES = {
+  idle: "Accex", listening: "Listening", thinking: "Thinking", acting: "Working on it",
+  done: "Done", blocked: "Scam blocked",
+};
+const SUBS = { idle: "Hold Alt Gr to talk", listening: "Speak now, release when done",
+  thinking: "Looking at your screen…", done: "", blocked: "Nothing was clicked or paid" };
+
+const QUOTE = "“Play Bohemian Rhapsody on Spotify”";
+const STEPS = [  // describe() labels from app.js
+  [7.5, "Opening Spotify"], [8.5, "Clicking Spotify search box"],
+  [9.0, "Typing “Bohemian Rhapsody Queen”"], [10.0, "Pressing enter"],
+];
+const TYPED = "Bohemian Rhapsody Queen";
+const REPLY1 = "Bohemian Rhapsody by Queen is now playing on Spotify.";
+const YOU2 = "“Lucas needs help, what should I do?”";
+const REPLY2 = "Stop. This looks like a scam: a fake grandson asking for gift cards. Don't click, call or pay anything.";
+
+function enter(el, t, at, dur = 0.35, dy = 6) {      // fade + rise from time `at`
+  const p = easeOut(prog(t, at, at + dur));
+  el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * dy}px)`;
+}
+
+function setLine(line, on, t, at) {
+  line.hidden = !on;
+  if (on) enter(line, t, at);
+}
+
+function pillState(t) {
+  const P = { state: "idle", sub: undefined, expanded: false, you: null, youAt: 0, step: null, stepAt: 0,
+              stepN: 0, bar: 0, reply: null, replyAt: 0, badge: false };
+  if (t < 3.8) { P.state = "idle"; }
+  else if (t < 5.5) { P.state = "listening"; }
+  else if (t < 7.5) { P.state = "thinking"; P.expanded = true; P.you = QUOTE; P.youAt = 5.5; }
+  else if (t < 13.0) {
+    P.expanded = true; P.you = QUOTE; P.youAt = -1;
+    let n = 0; STEPS.forEach(([at], i) => { if (t >= at) n = i + 1; });
+    const [at, label] = STEPS[n - 1];
+    P.state = t >= 10.5 ? "done" : "acting";
+    P.sub = t >= 10.5 ? "" : label;
+    P.step = label; P.stepN = n; P.stepAt = at;
+    const w = (k) => Math.min(92, 22 + k * 14);
+    P.bar = lerp(w(n - 1), w(n), easeOut(prog(t, at, at + 0.6)));
+    if (n === 1) P.bar = lerp(0, w(1), easeOut(prog(t, at, at + 0.6)));
+    if (t >= 10.5) { P.bar = lerp(w(4), 100, easeOut(prog(t, 10.5, 11.1))); P.reply = REPLY1; P.replyAt = 10.5; }
+  } else {
+    P.badge = true; P.expanded = true; P.you = YOU2; P.youAt = 13.05;
+    P.state = t < 14.0 ? "thinking" : "blocked";
+    if (t >= 14.0) { P.reply = REPLY2; P.replyAt = 14.0; }
+  }
+  return P;
+}
+
+function renderPill(t) {
+  const P = pillState(t), pill = $("pill");
+  if (pill.dataset.state !== P.state) pill.dataset.state = P.state;
+  $("title").textContent = STATES[P.state];
+  $("sub").textContent = P.sub !== undefined ? P.sub : SUBS[P.state];
+  pill.classList.toggle("expanded", P.expanded);
+  $("badge").hidden = !P.badge;
+  setLine($("youLine"), !!P.you, t, P.youAt); if (P.you) $("you").textContent = P.you;
+  setLine($("stepLine"), !!P.step, t, P.stepN === 1 ? P.stepAt : -1);
+  if (P.step) {
+    $("stepLabel").textContent = `Step ${P.stepN}`; $("step").textContent = P.step;
+    $("bar").style.width = `${P.bar}%`;
+  }
+  setLine($("replyLine"), !!P.reply, t, P.replyAt); if (P.reply) $("reply").textContent = P.reply;
+
+  // placement: bottom-centre anchor (x, bottom y) and scale
+  let y, s, o = 1;
+  if (t < 6.6) {
+    const p = spring(prog(t, 3.0, 3.6));
+    y = 700; s = lerp(1.7, 2.2, p); o = easeOut(prog(t, 3.0, 3.3));
+  } else {
+    const p = easeInOut(prog(t, 6.6, 7.25));
+    y = lerp(700, 1046, p); s = lerp(2.2, 1.5, p);
+  }
+  if (t >= 16.7) o = 1 - easeOut(prog(t, 16.7, 17.0));
+  const w = $("pillwrap");
+  w.style.display = t >= 3.0 && t < 17.0 ? "" : "none";
+  w.style.opacity = o;
+  w.style.transform = `translate(${960 - 260}px, ${y - w.offsetHeight}px) scale(${s})`;
+}
+
+function render(t) {
+  // scene visibility
+  show($("s1"), t < 3.0);
+  show($("s2"), t >= 3.0 && t < 7.0);
+  show($("desk"), t >= 6.6 && t < 17.0);
+  show($("s5"), t >= 17.0);
+
+  // 1 hook
+  if (t < 3.0) {
+    const words = $("hook1").children;
+    [0.08, 0.22, 0.36, 0.5].forEach((at, i) => enter(words[i], t, at, 0.3, 24));
+    $("hook1").style.opacity = 1 - prog(t, 1.9, 2.05);
+    const h2 = $("hook2").children;
+    [2.1, 2.25].forEach((at, i) => enter(h2[i], t, at, 0.3, 24));
+    $("hook2").style.opacity = t < 2.1 ? 0 : 1 - prog(t, 2.85, 3.0);
+  }
+
+  // 2 reveal
+  if (t >= 3.0 && t < 7.0) {
+    const n = Math.round(QUOTE.length * prog(t, 4.0, 5.0));
+    $("quote").innerHTML = "";
+    $("quote").append(document.createTextNode(QUOTE.slice(0, n)));
+    if (t >= 3.9 && t < 5.6) { const c = document.createElement("span"); c.className = "caret"; $("quote").append(c); }
+    enter($("kicker"), t, 3.1, 0.4, 10);
+    $("quote").style.opacity = $("kicker").style.opacity = 1 - easeInOut(prog(t, 6.3, 6.6));
+    $("s2").style.opacity = 1 - easeInOut(prog(t, 6.6, 7.0));
+  }
+
+  // 3-4 desktop
+  if (t >= 6.6 && t < 17.0) {
+    $("desk").style.opacity = easeOut(prog(t, 6.6, 7.0)) * (1 - easeOut(prog(t, 16.7, 17.0)));
+    const h3 = $("head3"), h4 = $("head4");
+    show(h3, t < 13.0); show(h4, t >= 13.0);
+    enter(h3, t, 6.85, 0.45, 18); enter(h4, t, 13.1, 0.45, 18);
+    if (t >= 12.75 && t < 13.0) h3.style.opacity = 1 - prog(t, 12.75, 12.95);
+
+    // music app
+    const app = $("app");
+    show(app, t >= 7.5 && t < 13.0);
+    const ap = spring(prog(t, 7.5, 8.1));
+    const out = easeInOut(prog(t, 12.7, 13.0));
+    app.style.opacity = clamp(prog(t, 7.5, 7.7)) * (1 - out);
+    app.style.transform = `scale(${lerp(0.9, 1, ap) - out * 0.04})`;
+    const typed = Math.round(TYPED.length * prog(t, 9.0, 9.7));
+    const q = $("q"), sb = $("search");
+    sb.classList.toggle("focus", t >= 8.5 && t < 10.1);
+    sb.classList.toggle("typed", t >= 9.0);
+    q.textContent = t >= 9.0 ? TYPED.slice(0, typed) : "Search songs, artists…";
+    if (t >= 8.5 && t < 10.1 && Math.floor(t * 2) % 2 === 0) { const c = document.createElement("span"); c.className = "caret2"; q.append(c); }
+    const res = t >= 10.1;
+    show($("recent"), !res); show($("results"), res);
+    if (res) enter($("results"), t, 10.1, 0.35, 14);
+    $("toprow").classList.toggle("hl", t >= 10.3);
+    show($("np"), t >= 10.3);
+    if (t >= 10.3) { enter($("np"), t, 10.3, 0.3, 20); $("npbar").style.width = `${lerp(0, 10, prog(t, 10.3, 13.0))}%`; }
+
+    // cursor
+    const cur = $("cursor"), rip = $("ripple");
+    show(cur, t >= 7.9 && t < 12.8);
+    const cp = easeInOut(prog(t, 7.95, 8.45));
+    let cx = lerp(1250, 800, cp), cy = lerp(560, 200, cp);
+    const cp2 = easeInOut(prog(t, 10.05, 10.45));
+    cx = lerp(cx, 760, cp2); cy = lerp(cy, 420, cp2);
+    cur.style.transform = `translate(${cx}px, ${cy}px) scale(${t >= 8.45 && t < 8.6 ? 0.88 : 1})`;
+    cur.style.opacity = clamp(prog(t, 7.9, 8.05)) * (1 - prog(t, 12.6, 12.8));
+    const rp = prog(t, 8.5, 8.95);
+    show(rip, rp > 0 && rp < 1);
+    rip.style.left = "803px"; rip.style.top = "204px";
+    rip.style.transform = `scale(${lerp(0.3, 1.6, easeOut(rp))})`; rip.style.opacity = 1 - rp;
+
+    // mail
+    const mail = $("mail");
+    show(mail, t >= 13.0);
+    const mp = easeOut(prog(t, 13.0, 13.45));
+    mail.style.opacity = mp; mail.style.transform = `scale(${lerp(0.96, 1, mp)})`;
+    $("giftline").classList.toggle("flag", t >= 14.15);
+  }
+
+  // 5 outro
+  if (t >= 17.0) {
+    const op = spring(prog(t, 17.0, 17.7));
+    $("bigorb").style.transform = `scale(${lerp(2.5, 4.6, op)})`;
+    $("bigorb").style.opacity = easeOut(prog(t, 17.0, 17.3));
+    enter($("word"), t, 17.15, 0.45, 26);
+    enter($("tag"), t, 17.55, 0.45, 20);
+    enter($("fine"), t, 18.0, 0.45, 14);
+  }
+
+  renderPill(t);
+
+  // freeze the real CSS keyframe animations (orb spin, breathe, wave bars, shimmer) at time t
+  for (const a of document.getAnimations()) { a.pause(); a.currentTime = t * 1000; }
+}
+
+window.render = render;
+window.ready = document.fonts.ready.then(() => true);
+render(0);
+</script>
+</body>
+</html>
