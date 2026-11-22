@@ -173,3 +173,99 @@ def test_enabled_flag():
     assert senior.enabled({"ACCEX_PROFILE": " Senior "})
     assert not senior.enabled({})
     assert not senior.enabled({"ACCEX_PROFILE": "default"})
+
+
+# ---------------------------------------------------------------- wired into VisionBrain + loop
+from brain.brain import VisionBrain  # noqa: E402
+from brain.prompt import build_system_prompt  # noqa: E402
+from interfaces import Screenshot  # noqa: E402
+from main import Assistant  # noqa: E402
+from mocks.actions import DEMO_SPECS, KeywordGate, LoggingExecutor  # noqa: E402
+from mocks.brain import StaticCapturer  # noqa: E402
+from mocks.demo import PrintLog  # noqa: E402
+from mocks.voice import ConsoleSTT, PrintSpeaker, ScriptedListener  # noqa: E402
+
+SHOT = Screenshot(b"\xff\xd8x", 1280, 800, 0, 0, 2560, 1600)
+
+
+class FakeProvider:
+    model = "fake"
+
+    def __init__(self, replies):
+        self.replies = list(replies)
+        self.calls = []
+
+    def complete(self, system, history, user_text, screenshot):
+        self.calls.append({"system": system, "user_text": user_text})
+        return self.replies.pop(0)
+
+
+@pytest.fixture()
+def senior_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("ACCEX_PROFILE", "senior")
+    monkeypatch.setenv("ACCEX_FAMILY_PROFILE", str(FIXTURE))
+    monkeypatch.setenv("ACCEX_FAMILY_LOG", str(tmp_path / "family.jsonl"))
+    return tmp_path
+
+
+def test_senior_system_prompt_is_default_plus_block(senior_env):
+    p = FakeProvider([reply("Hi.")])
+    b = VisionBrain(DEMO_SPECS, provider=p)
+    b.ask("hello", SHOT)
+    default = build_system_prompt(DEMO_SPECS)
+    assert p.calls[0]["system"] == default + prompt_block(load_profile(FIXTURE))
+    assert b.senior.profile["user_name"] == "Carmen"
+
+
+def test_senior_without_profile_file_runs(senior_env, monkeypatch):
+    monkeypatch.setenv("ACCEX_FAMILY_PROFILE", str(senior_env / "missing.json"))
+    b = VisionBrain(DEMO_SPECS, provider=FakeProvider([reply("Hello Carmen.")]))
+    assert b.senior.profile is None
+    assert b.ask("hello", SHOT).say == "Hello Carmen."
+
+
+def make_assistant(lines, replies):
+    executor = LoggingExecutor(quiet=True)
+    provider = FakeProvider(replies)
+    a = Assistant(listener=ScriptedListener(lines), stt=ConsoleSTT(),
+                  speaker=PrintSpeaker(quiet=True), capturer=StaticCapturer(),
+                  brain=VisionBrain(executor.specs(), provider=provider), executor=executor,
+                  gate=KeywordGate(), log=PrintLog(quiet=True), settle_scale=0)
+    return a, executor, provider
+
+
+def test_scam_mid_task_stops_the_loop(senior_env):
+    a, executor, _ = make_assistant(["Open my email"], [
+        reply("Opening your email.", {"type": "open_url", "params": {"url": "https://mail.google.com"}}),
+        reply("Clicking the link.", {"type": "click", "params": {"x": 5, "y": 5}},
+              risk={"is_scam": True, "reason": "an email asking for gift cards"}),
+    ])
+    a.run_turn()
+    assert [x.type for x in executor.executed] == ["open_url"]
+    assert a.speaker.said[-1].startswith("Stop. This looks like a scam: an email asking for gift cards")
+    kinds = [e["kind"] for e in events(senior_env)]
+    assert kinds == ["asked", "done", "blocked"]
+
+
+def test_clarify_then_answer_resumes_the_task(senior_env):
+    a, executor, provider = make_assistant(["Call the kids", "Lucas"], [
+        reply("Calling.", {"type": "open_app", "params": {"name": "whatsapp"}},
+              clarify={"question": "Who should I call?", "options": ["Lucas", "Sofia"]}),
+        reply("Opening WhatsApp to call Lucas.", {"type": "open_app", "params": {"name": "whatsapp"}}),
+        reply("WhatsApp is open on Lucas's chat."),
+    ])
+    a.run_turn()
+    assert executor.executed == [] and a.speaker.said[-1] == "Who should I call? Lucas, or Sofia?"
+    a.run_turn()
+    assert [x.type for x in executor.executed] == ["open_app"]
+    assert a.speaker.said[-2:] == ["Opening WhatsApp to call Lucas.", "WhatsApp is open on Lucas's chat."]
+    assert "User: Lucas" in provider.calls[1]["user_text"]
+
+
+def test_dangerous_action_still_needs_spoken_yes_in_senior_mode(senior_env):
+    a, executor, _ = make_assistant(["Reply thanks to Lucas"], [
+        reply("I'll reply: Thanks. Do you want me to send it?",
+              {"type": "email_reply", "params": {"body": "Thanks"}}, confirm=False),
+    ])
+    a.run_turn()
+    assert executor.executed == [] and a.pending is not None
